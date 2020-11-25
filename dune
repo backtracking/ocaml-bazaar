@@ -1,0 +1,3 @@
+(library
+ (name vector)
+ (modules vector))
