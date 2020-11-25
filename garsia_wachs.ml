@@ -50,7 +50,7 @@ let phase1 l =
 (* phase 2: marks each leaf with its depth *)
 
 let rec mark d = function
-  | Leaf (x, dx) -> dx := d
+  | Leaf (_, dx) -> dx := d
   | Node (l, r) -> mark (d + 1) l; mark (d + 1) r
 
 (* phase 3: builds a tree from the list of leaves/depths *)

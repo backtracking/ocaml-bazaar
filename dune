@@ -10,5 +10,41 @@
  (modules dlxm))
 
 (library
+ (name fenwick)
+ (modules fenwick))
+(test
+ (name test_fenwick)
+ (modules test_fenwick)
+ (libraries fenwick))
+
+(library
+ (name garsia_wachs)
+ (modules garsia_wachs))
+
+(library
+ (name inverse_in_place)
+ (modules inverse_in_place))
+
+(library
+ (name leftistheap)
+ (modules leftistheap))
+
+(executable
+ (name parse_arith)
+ (modules parse_arith))
+
+(library
+ (name random_access_list)
+ (modules random_access_list))
+
+(library
+ (name skew_heap)
+ (modules skew_heap))
+
+(library
+ (name suffix_tree)
+ (modules suffix_tree))
+
+(library
  (name vector)
  (modules vector))
