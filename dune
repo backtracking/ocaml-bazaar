@@ -1,3 +1,14 @@
 (library
+ (name braun)
+ (modules braun))
+
+(library
+ (name dlx)
+ (modules dlx))
+(library
+ (name dlxm)
+ (modules dlxm))
+
+(library
  (name vector)
  (modules vector))
