@@ -1,6 +1,10 @@
 (library
  (name braun)
  (modules braun))
+(test
+ (name test_braun)
+ (modules test_braun)
+ (libraries braun))
 
 (library
  (name dlx)
@@ -61,3 +65,8 @@
 (library
  (name vector)
  (modules vector))
+(test
+ (name test_vector)
+ (modules test_vector)
+ (libraries vector))
+
