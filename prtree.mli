@@ -13,16 +13,17 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(*s This module provides a generic ASCII pretty-printing function for trees,
-    in a way similar to what the Unix command \texttt{pstree} does:
-\begin{verbatim}
+(** This module provides a generic ASCII pretty-printing function for trees,
+    in a way similar to what the Unix command `pstree` does:
+```
 bash-+-emacs-+-emacsserver
      |       `-ispell
      |-pstree
      `-xdvi.bin
-\end{verbatim} *)
+```
+*)
 
-(*s A tree structure is given as an abstract type [t] together with a
+(** A tree structure is given as an abstract type [t] together with a
     decomposition function [decomp] returning the label of the node and
     the list of the children trees. Leaves are nodes with no child (i.e.
     an empty list). *)
@@ -32,12 +33,10 @@ module type Tree = sig
   val decomp : t -> string * t list
 end
 
-(*s The functor [Make] takes a tree structure [T] as argument and provides a
+(** The functor [Make] takes a tree structure [T] as argument and provides a
     single function [print: formatter -> T.t -> unit] to print a tree on a
     given formatter. *)
 
 module Make : functor (T : Tree) -> sig
   val print : Format.formatter -> T.t -> unit
 end
-
-(* \newpage *)
