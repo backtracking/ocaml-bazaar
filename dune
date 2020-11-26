@@ -29,9 +29,22 @@
  (name leftistheap)
  (modules leftistheap))
 
+(library
+ (name parray)
+ (modules parray))
+
 (executable
  (name parse_arith)
  (modules parse_arith))
+
+(library
+ (name puf)
+ (modules puf)
+ (libraries parray))
+(test
+ (name test_puf)
+ (modules test_puf)
+ (libraries parray puf))
 
 (library
  (name random_access_list)
