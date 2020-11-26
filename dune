@@ -71,6 +71,10 @@
  (modules suffix_tree))
 
 (library
+ (name trie)
+ (modules trie))
+
+(library
  (name vector)
  (modules vector))
 (test
