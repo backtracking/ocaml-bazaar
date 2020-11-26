@@ -1,4 +1,12 @@
 (library
+ (name bitset)
+ (modules bitset))
+(test
+ (name test_bitset)
+ (modules test_bitset)
+ (libraries bitset))
+
+(library
  (name braun)
  (modules braun))
 (test
