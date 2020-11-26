@@ -63,6 +63,10 @@
  (modules random_access_list))
 
 (library
+ (name rope)
+ (modules rope))
+
+(library
  (name skew_heap)
  (modules skew_heap))
 
