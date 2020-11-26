@@ -50,6 +50,10 @@
  (modules parse_arith))
 
 (library
+ (name prtree)
+ (modules prtree))
+
+(library
  (name puf)
  (modules puf)
  (libraries parray))
