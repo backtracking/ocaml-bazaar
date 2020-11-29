@@ -13,9 +13,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Braun trees.
+(* Purely applicative priority queues implemented using Braun trees.
 
-  Code for functions [size] and [copy] from this paper:
+    Code for functions [size] and [copy] from this paper:
       Three Algorithms on Braun Trees (Functional Pearl)
       Chris Okasaki
       J. Functional Programming 7 (6) 661–666, November 1997
@@ -46,13 +46,16 @@ module Make(X: Ordered): sig
   val extract_min: t -> X.t * t
     (* runs in O(log n) *)
 
+  val replace_min: X.t -> t -> t
+    (* runs in O(log n) *)
+
   val naive_size: t -> int
     (* runs in O(n) *)
   val size: t -> int
     (* runs in O((log n)^2) *)
 
   val copy: int -> X.t -> t
-    (* [copy n x] returns a tree containing [n] occurrences of [x]
+    (* [copy n x] returns a queue containing [n] occurrences of [x]
        runs in O(log n) *)
 
 end
