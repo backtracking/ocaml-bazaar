@@ -70,6 +70,15 @@
  (name rope)
  (modules rope))
 
+(executable
+ (name sieve)
+ (modules sieve))
+
+(executable
+ (name sieve_seq)
+ (modules sieve_seq)
+ (libraries braun))
+
 (library
  (name skew_heap)
  (modules skew_heap))

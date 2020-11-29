@@ -41,3 +41,15 @@ let () =
     if n > 0 then
       assert (fst (extract_min t) = 42)
   done
+
+let () =
+  let q = ref empty in
+  for i = 0 to 99 do q := insert i !q done;
+  for i = 0 to 99 do
+    assert (min !q = i);
+    q := replace_min 100 !q;
+    assert (min !q = i+1);
+    assert (size !q = 100)
+  done
+
+

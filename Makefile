@@ -3,7 +3,7 @@ all:
 	dune build
 
 test:
-	dune runtest
+	time dune runtest
 
 doc:
 	dune build @doc
