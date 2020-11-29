@@ -63,6 +63,14 @@
  (libraries parray puf))
 
 (library
+ (name radixsort)
+ (modules radixsort))
+(test
+ (name test_radixsort)
+ (modules test_radixsort)
+ (libraries parray radixsort))
+
+(library
  (name random_access_list)
  (modules random_access_list))
 
