@@ -96,6 +96,11 @@
  (modules suffix_tree))
 
 (library
+ (name time)
+ (modules time)
+ (libraries unix))
+
+(library
  (name trie)
  (modules trie))
 
