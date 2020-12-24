@@ -36,6 +36,10 @@
 (library
  (name idd)
  (modules idd))
+(test
+ (name test_idd)
+ (modules test_idd)
+ (libraries idd))
 
 (library
  (name inverse_in_place)
