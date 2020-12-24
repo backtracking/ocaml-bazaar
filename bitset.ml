@@ -142,6 +142,16 @@ let rec filter p s =
     let s = filter p (s - i) in
     if p (tib i) then s + i else s
 
+let rec filter_map f s =
+  if s == 0 then
+    0
+  else
+    let i = s land (-s) in
+    let s = filter_map f (s - i) in
+    match f (tib i) with
+    | None -> s
+    | Some x -> add x s
+
 let rec partition p s =
    if s == 0 then
     0, 0

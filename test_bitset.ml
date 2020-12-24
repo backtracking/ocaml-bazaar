@@ -27,6 +27,14 @@ let testl l =
   assert (disjoint empty s);
   ()
 
+let () =
+  let f i = if i mod 2 = 0 && i >= 2 then Some (i-1) else None in
+  let s = filter_map f full in
+  assert (cardinal s = Sys.int_size / 2);
+  for i = 0 to Sys.int_size - 1 do
+    if i land 1 = 1 then assert (mem i s) else assert (not (mem i s))
+  done
+
 let () = testl [1; 3; 8; 11]
 let () = testl [2; 3; 4; 5]
 let () = testl [62]

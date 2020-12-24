@@ -34,6 +34,10 @@
  (modules garsia_wachs))
 
 (library
+ (name idd)
+ (modules idd))
+
+(library
  (name inverse_in_place)
  (modules inverse_in_place))
 
