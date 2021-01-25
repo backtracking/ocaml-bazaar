@@ -6,6 +6,11 @@
  (modules test_bitset)
  (libraries bitset))
 
+(executable
+ (name brainfuck)
+ (promote (until-clean))
+ (modules brainfuck))
+
 (library
  (name braun)
  (modules braun))
