@@ -14,7 +14,7 @@
 (**************************************************************************)
 
 (** This module provides a generic ASCII pretty-printing function for trees,
-    in a way similar to what the Unix command `pstree` does:
+    in a way similar to what the Unix commands `tree` or `pstree` do:
 ```
 bash-+-emacs-+-emacsserver
      |       `-ispell
