@@ -3,3 +3,4 @@ _build/
 dune-project
 brainfuck.exe
 bf
+burr.exe
