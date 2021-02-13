@@ -26,8 +26,8 @@ let code, codelen, jump =
 
 let zero = Char.chr 0
 let mem = Bytes.make 30_000 zero
-let get i = Char.code (Bytes.get mem i)
-let set i n = Bytes.set mem i (Char.chr n)
+let get i = Bytes.get_uint8 mem i
+let set i n = Bytes.set_uint8 mem i n
 
 let rec exec pc ptr = if pc < codelen then match code.[pc] with
  | '>' -> exec (pc + 1) (ptr + 1)
