@@ -122,6 +122,13 @@
  (modules time)
  (libraries unix))
 
+(executable
+ (name tetris)
+ (flags ())
+ (promote (until-clean))
+ (modules tetris)
+ (libraries curses unix))
+
 (library
  (name trie)
  (modules trie))
