@@ -1,6 +1,10 @@
 (env
  (dev
-  (flags (:standard -w -27))))
+  (flags (:standard -w -27-26))))
+
+(library
+ (name bag)
+ (modules bag))
 
 (library
  (name bitset)
@@ -27,6 +31,12 @@
  (name burr)
  (promote (until-clean))
  (modules burr))
+
+(executable
+ (name dice_puzzle)
+ (promote (until-clean))
+ (modules dice_puzzle)
+ (libraries bag))
 
 (library
  (name dlx)
