@@ -69,7 +69,29 @@ end) : sig
   val cardinal: t -> int
   (** [cardinal b] is the sum of the multiplicities. *)
 
-  val union : t -> t -> t
+  val elements: t -> (elt * int) list
+  (** Returns the list of all elements of the given bag. Each element
+     is given with its multiplicity. The returned list is sorted in
+     increasing order of elements with respect to the ordering over
+     the type of the elements. *)
+
+  val min_elt: t -> elt * int
+  (** Returns the smallest element in a given bag (with respect
+      to the ordering over the type of the elements) with its multiplicity,
+      or raises [Not_found] if the bag is empty. *)
+
+  val max_elt: t -> elt * int
+  (** Returns the largest element in a given bag (with respect
+      to the ordering over the type of the elements) with its multiplicity,
+      or raises [Not_found] if the bag is empty. *)
+
+  val choose: t -> elt * int
+  (** Returns one element of the given bag with its multiplicity, or
+     raises [Not_found] if the bag is empty. Which binding is chosen
+     is unspecified, but equal elements will be chosen for equal
+     bags. *)
+
+  val union: t -> t -> t
   (** [union b1 b2] returns a new bag [b] where, for all element x,
       [occ x b = max (occ x b1) (occ x b2)]. *)
 
@@ -77,15 +99,15 @@ end) : sig
   (** [sum b1 b2] returns a new bag [b] where, for all element x,
       [occ x b = occ x b1 + occ x b2]. *)
 
-  val inter : t -> t -> t
+  val inter: t -> t -> t
   (** [inter b1 b2] returns a new bag [b] where, for all element x,
       [occ x b = min (occ x b1) (occ x b2)]. *)
 
-  val diff : t -> t -> t
+  val diff: t -> t -> t
   (** [diff b1 b2] returns a new bag [b] where, for all element x,
       [occ x b = max 0 (occ x b1 - occ x b2)]. *)
 
-  val disjoint : t -> t -> bool
+  val disjoint: t -> t -> bool
   (** Test if two bags are disjoint. *)
 
   val included: t -> t -> bool
@@ -103,13 +125,27 @@ end) : sig
       are the elements in bag [b] (in increasing order), and [m1 ... mN] are
       their multiplicities. *)
 
-  val for_all : (elt -> int -> bool) -> t -> bool
+  val for_all: (elt -> int -> bool) -> t -> bool
   (** [for_all p b] checks if all the elements of the bag satisfy the predicate
       [p]. *)
 
-  val exists : (elt -> int -> bool) -> t -> bool
+  val exists: (elt -> int -> bool) -> t -> bool
   (** [exists p b] checks if at least one element of the bag satisfies the
       predicate [p]. *)
+
+  val filter: (elt -> int -> bool) -> t -> t
+  (** [filter p b] returns the bag with all the elements in [b] that satisfy
+       predicate [p]. Multiplicities are unchanged. *)
+
+  val filter_map: (elt -> int -> int option) -> t -> t
+  (** [filter_map f b] applies the function [f] to every element of [b],  and
+       builds a bag from the results. For each element [x] with multiplicity
+       [m] in the bag [b]:
+
+       - if [f x m] is [None] then [x] is not in the result,
+
+       - if [f x m] is [Some m'] then the element [x] is in the output bag
+        with multiplicity [m']. Raises [Invalid_argument] if [m' < 0]. *)
 
   val compare: t -> t -> int
   (** Total ordering between bags. *)
@@ -122,6 +158,17 @@ end) : sig
   (** Hash function for bags. It uses function [X.hash] to hash elements.
       This function is consistent with function [equal], so that this module
       can be passed as argument to [Hashtbl.Make]. *)
+
+  val to_seq: t -> (elt * int) Seq.t
+  (** Iterates on the whole bag, in ascending order of elements. *)
+
+  val add_seq: (elt * int) Seq.t -> t -> t
+  (** Adds the given elements to the bag, in order.
+      Raises [Invalid_argument] if a multiplicity is negative. *)
+
+  val of_seq: (elt * int) Seq.t -> t
+  (** Builds a bag from the given elements and multiplicities.
+      Raises [Invalid_argument] if a multiplicity is negative. *)
 
 end
 

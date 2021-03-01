@@ -15,6 +15,22 @@ let () =
   assert (B.included a b);
   assert (not (B.included b a));
   assert (not (B.disjoint b a));
+  assert (B.elements a = [1,1; 2,2; 3,3]);
+  assert (B.min_elt a = (1,1));
+  assert (B.max_elt a = (3,3));
+  let f x n = Some 1 in
+  assert (B.cardinal (B.filter_map f a) = 3);
+  assert (B.cardinal (B.filter_map f b) = 3);
+  let e = B.filter (fun x _ -> x mod 2 = 0) a in
+  assert (B.min_elt e = (2,2));
+  assert (B.max_elt e = (2,2));
+  assert (B.choose e = (2,2));
+  assert (B.cardinal e = 2);
+  let o =
+    B.filter_map (fun x m -> if x mod 2 = 1 then Some (2*m) else None) b in
+  assert (B.min_elt o = (1,8));
+  assert (B.max_elt o = (3,12));
+  assert (B.cardinal o = 20);
   ()
 
 let test n =

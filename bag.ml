@@ -58,6 +58,18 @@ end) = struct
   let cardinal b =
     M.fold (fun _ m c -> m + c) b 0
 
+  let elements =
+    M.bindings
+
+  let min_elt =
+    M.min_binding
+
+  let max_elt =
+    M.max_binding
+
+ let choose =
+   M.choose
+
   let union b1 b2 =
     M.merge (fun _ o1 o2 -> match o1, o2 with
                             | None, None -> None
@@ -101,6 +113,15 @@ end) = struct
   let exists =
     M.exists
 
+  let filter =
+    M.filter
+
+  let filter_map f =
+    let f x n = match f x n with
+      | Some m when m < 0 -> invalid_arg "filter_map"
+      | o -> o in
+    M.filter_map f
+
   let compare =
     M.compare Stdlib.compare
 
@@ -109,5 +130,14 @@ end) = struct
 
   let hash b =
     fold (fun x n h -> 5003 * (5003 * h + X.hash x) + n) b 0
+
+  let to_seq =
+    M.to_seq
+
+  let add_seq s b =
+    Seq.fold_left (fun b (x, mult) -> add x ~mult b) b s
+
+  let of_seq s =
+    add_seq s empty
 
 end
