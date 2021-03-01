@@ -5,6 +5,10 @@
 (library
  (name bag)
  (modules bag))
+(test
+ (name test_bag)
+ (modules test_bag)
+ (libraries bag))
 
 (library
  (name bitset)

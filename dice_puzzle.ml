@@ -13,6 +13,7 @@ module Block : sig
   val create: int -> t
   val compare: t -> t -> int
   val print: formatter -> t -> unit
+  val hash: t -> int
 end = struct
 
   type t = int (* bits 0..7 *)
@@ -66,6 +67,8 @@ end = struct
   let create x =
     assert (0 <= x && x < 256);
     norm x
+
+  let hash b = b
 
 end
 

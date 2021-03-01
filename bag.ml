@@ -1,11 +1,30 @@
+(**************************************************************************)
+(*                                                                        *)
+(*  Copyright (C) Jean-Christophe Filliatre                               *)
+(*                                                                        *)
+(*  This software is free software; you can redistribute it and/or        *)
+(*  modify it under the terms of the GNU Library General Public           *)
+(*  License version 2.1, with the special exception on linking            *)
+(*  described in file LICENSE.                                            *)
+(*                                                                        *)
+(*  This software is distributed in the hope that it will be useful,      *)
+(*  but WITHOUT ANY WARRANTY; without even the implied warranty of        *)
+(*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  *)
+(*                                                                        *)
+(**************************************************************************)
 
-module Make(X: sig type t val compare: t -> t -> int end) = struct
+module Make(X: sig
+  type t
+  val compare: t -> t -> int
+  val hash: t -> int
+end) = struct
 
   module M = Map.Make(X)
 
   type elt = X.t
 
   type t = int M.t
+  (** invariant: multiplicities are all > 0 *)
 
   let empty =
     M.empty
@@ -19,30 +38,76 @@ module Make(X: sig type t val compare: t -> t -> int end) = struct
   let occ x b =
     try M.find x b with Not_found -> 0
 
-  let add x b =
-    try let n = M.find x b in M.add x (n + 1) b
-    with Not_found -> M.add x 1 b
+  let add x ?(mult=1) b =
+    if mult < 0 then invalid_arg "add";
+    if mult = 0 then b else
+    try let m = M.find x b in M.add x (m + mult) b
+    with Not_found -> M.add x mult b
 
   let singleton x =
     M.add x 1 M.empty
 
-  let remove x b =
+  let remove x ?(mult=1) b =
+    if mult < 0 then invalid_arg "remove";
+    if mult = 0 then b else
     M.update x
-      (function None | Some 1 -> None | Some n -> Some (n - 1)) b
+      (function | None | Some 1 -> None
+                | Some m when m <= mult -> None
+                | Some m -> Some (m - mult)) b
 
   let cardinal b =
-    M.fold (fun _ n c -> n + c) b 0
+    M.fold (fun _ m c -> m + c) b 0
+
+  let union b1 b2 =
+    M.merge (fun _ o1 o2 -> match o1, o2 with
+                            | None, None -> None
+                            | None, Some m | Some m, None -> Some m
+                            | Some m1, Some m2 -> Some (max m1 m2)) b1 b2
+
+  let sum b1 b2 =
+    M.merge (fun _ o1 o2 -> match o1, o2 with
+                            | None, None -> None
+                            | None, Some m | Some m, None -> Some m
+                            | Some m1, Some m2 -> Some (m1 + m2)) b1 b2
+
+  let inter b1 b2 =
+    M.merge (fun _ o1 o2 -> match o1, o2 with
+                            | None, None
+                            | None, Some _ | Some _, None -> None
+                            | Some m1, Some m2 -> Some (min m1 m2)) b1 b2
+
+  let diff b1 b2 =
+    M.merge (fun _ o1 o2 -> match o1, o2 with
+                            | None, _ -> None
+                            | Some m, None -> Some m
+                            | Some m1, Some m2 when m1 <= m2 -> None
+                            | Some m1, Some m2 -> Some (m1 - m2)) b1 b2
+
+  let disjoint b1 b2 =
+    M.for_all (fun x1 _ -> not (mem x1 b2)) b1
+
+  let included b1 b2 =
+    M.for_all (fun x1 m1 -> m1 <= occ x1 b2) b1
+
+  let iter =
+    M.iter
 
   let fold =
     M.fold
 
-  let iter =
-    M.iter
+  let for_all =
+    M.for_all
+
+  let exists =
+    M.exists
 
   let compare =
     M.compare Stdlib.compare
 
   let equal =
     M.equal (==)
+
+  let hash b =
+    fold (fun x n h -> 5003 * (5003 * h + X.hash x) + n) b 0
 
 end
