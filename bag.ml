@@ -16,7 +16,6 @@
 module Make(X: sig
   type t
   val compare: t -> t -> int
-  val hash: t -> int
 end) = struct
 
   module M = Map.Make(X)
@@ -44,6 +43,13 @@ end) = struct
     try let m = M.find x b in M.add x (m + mult) b
     with Not_found -> M.add x mult b
 
+  let update x f b =
+    let f o =
+      let m = f (match o with None -> 0 | Some m -> m) in
+      if m < 0 then invalid_arg "update";
+      if m = 0 then None else Some m in
+    M.update x f b
+
   let singleton x =
     M.add x 1 M.empty
 
@@ -55,6 +61,15 @@ end) = struct
                 | Some m when m <= mult -> None
                 | Some m -> Some (m - mult)) b
 
+  let merge f b1 b2 =
+    let f x o1 o2 =
+      let m1 = match o1 with None -> 0 | Some m -> m in
+      let m2 = match o2 with None -> 0 | Some m -> m in
+      let m = f x m1 m2 in
+      if m < 0 then invalid_arg "merge";
+      if m = 0 then None else Some m in
+    M.merge f b1 b2
+
   let cardinal b =
     M.fold (fun _ m c -> m + c) b 0
 
@@ -64,11 +79,20 @@ end) = struct
   let min_elt =
     M.min_binding
 
+  let min_elt_opt =
+    M.min_binding_opt
+
   let max_elt =
     M.max_binding
 
- let choose =
-   M.choose
+  let max_elt_opt =
+    M.max_binding_opt
+
+  let choose =
+    M.choose
+
+  let choose_opt =
+    M.choose_opt
 
   let union b1 b2 =
     M.merge (fun _ o1 o2 -> match o1, o2 with
@@ -122,17 +146,44 @@ end) = struct
       | o -> o in
     M.filter_map f
 
+  let partition =
+    M.partition
+
+  let split x b =
+    let l, m, r = M.split x b in
+    l, (match m with None -> 0 | Some m -> m), r
+
+  let find_first =
+    M.find_first
+
+  let find_first_opt =
+    M.find_first_opt
+
+  let find_last =
+    M.find_last
+
+  let find_last_opt =
+    M.find_last_opt
+
+  let map f =
+    let f m = let m = f m in if m < 0 then invalid_arg "map"; m in
+    M.map f
+
+  let mapi f =
+    let f x m = let m = f x m in if m < 0 then invalid_arg "mapi"; m in
+    M.mapi f
+
   let compare =
     M.compare Stdlib.compare
 
   let equal =
     M.equal (==)
 
-  let hash b =
-    fold (fun x n h -> 5003 * (5003 * h + X.hash x) + n) b 0
-
   let to_seq =
     M.to_seq
+
+  let to_seq_from =
+    M.to_seq_from
 
   let add_seq s b =
     Seq.fold_left (fun b (x, mult) -> add x ~mult b) b s

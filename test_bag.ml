@@ -49,7 +49,6 @@ let test n =
   assert (B.cardinal !b1 = 2*(n+1));
   assert (B.cardinal !b2 = 2*(n+1));
   assert (B.equal !b1 !b2);
-  assert (B.hash !b1 = B.hash !b2);
   assert (B.for_all (fun x _ -> x <= n) !b1);
   assert (not (B.for_all (fun x _ -> x < n) !b1));
   assert (B.exists (fun x m -> x = 0 && m = 2) !b2);
