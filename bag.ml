@@ -61,6 +61,9 @@ end) = struct
                 | Some m when m <= mult -> None
                 | Some m -> Some (m - mult)) b
 
+  let remove_all =
+    M.remove
+
   let merge f b1 b2 =
     let f x o1 o2 =
       let m1 = match o1 with None -> 0 | Some m -> m in
@@ -142,8 +145,9 @@ end) = struct
 
   let filter_map f =
     let f x n = match f x n with
-      | Some m when m < 0 -> invalid_arg "filter_map"
-      | o -> o in
+      | m when m < 0 -> invalid_arg "filter_map"
+      | 0 -> None
+      | m -> Some m in
     M.filter_map f
 
   let partition =
