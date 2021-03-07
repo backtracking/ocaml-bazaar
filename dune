@@ -115,6 +115,10 @@
  (modules rope))
 
 (executable
+ (name rule110)
+ (modules rule110))
+
+(executable
  (name sieve)
  (modules sieve))
 
