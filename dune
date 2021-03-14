@@ -96,7 +96,7 @@
 (test
  (name test_radixsort)
  (modules test_radixsort)
- (libraries parray radixsort))
+ (libraries radixsort))
 
 (library
  (name random_access_list)
@@ -105,6 +105,10 @@
 (library
  (name rope)
  (modules rope))
+(test
+ (name test_rope)
+ (modules test_rope)
+ (libraries rope))
 
 (executable
  (name rule110)

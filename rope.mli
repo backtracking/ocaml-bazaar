@@ -16,12 +16,29 @@
 (** Ropes are persistent data structures for long sequences.  Elements
     are of any type. When elements are characters, ropes thus implement
     strings (with an interface identical to that of [String]) but with
-    far better performances w.r.t. concatenation of substring
-    extraction, especially on very large strings. *)
+    far better performances w.r.t. concatenation and substring
+    extraction, especially on very large strings.
 
-(** Ropes are naturally implemented as a functor turning a (possibly
+    Ropes are naturally implemented as a functor turning a (possibly
     inefficient) data structure of ``strings'' into another (more
-    efficient) data structure with the same signature. *)
+    efficient) data structure with the same signature. This is functor
+    [Make] below.
+
+    For convenience, ropes built on top of OCaml strings are provided
+    in module [S] below.
+
+    CAVEATS: A rope can be *huge*, due to internal sharing of sub-ropes.
+    For instance, you can easily build a rope of size [O(2^n)] by repeated
+    concatenations [append r r]. Yet, you should be aware that:
+
+    - Type [int] is used internally to store rope lengths. Consequently,
+      you should not build ropes of length larger than [max_int]. There
+      are no runtime checks to prevent you from doing that.
+
+    - Turning a rope back to a usual string with function [to_string]
+      may consume a lot of resources (time and space) and may even
+      fail (e.g. with [Out_of_memory]).
+*)
 
 exception Out_of_bounds
 
@@ -64,6 +81,9 @@ end
 module type ROPE = sig
 
   include STRING
+
+  val (++) : t -> t -> t
+    (** syntactic sugar for append *)
 
   val set : t -> int -> char -> t
     (** [set t i c] returns a new rope identical to [t],
@@ -182,7 +202,7 @@ end
     built.
     - [maximal_height] is the threshold for rebalancing: when a rope has
     height at least [maximal_height] it is then rebalanced; setting
-    [small_length] to [max_int] will result in ropes that are never
+    [maximal_height] to [max_int] will result in ropes that are never
     rebalanced (which is perfectly fine in many applications).
 *)
 
@@ -200,6 +220,8 @@ module Make(S : STRING)(C : CONTROL) : sig
 
   val of_string : S.t -> t
 
+  val to_string : t -> S.t
+
 end
 
 
@@ -212,6 +234,8 @@ module S : sig
   include ROPE with type char = Char.t
 
   val of_string : string -> t
+
+  val to_string : t -> string
 
 end
 
@@ -228,6 +252,8 @@ module SF : sig
   val of_string : string -> t
 
   val of_function : int -> (int -> char) -> t
+
+  val to_string : t -> string
 
 end
 
@@ -247,6 +273,8 @@ module MakeArray(X : PrintableType) : sig
   include ROPE with type char = X.t
 
   val of_array : X.t array -> t
+    (** note: the array passed as argument is copied, to avoid external
+        modifications in the future *)
 
   val create : int -> X.t -> t
 

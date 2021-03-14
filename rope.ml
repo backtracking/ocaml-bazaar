@@ -44,6 +44,8 @@ module type ROPE = sig
 
   include STRING
 
+  val (++) : t -> t -> t
+
   val set : t -> int -> char -> t
 
   val delete : t -> int -> t
@@ -292,6 +294,10 @@ module Make(S : STRING)(C : CONTROL) = struct
   let insert_char t i c =
     insert t i (singleton c)
 
+  let rec to_string = function
+    | Str (s, ofs, len) -> S.sub s ofs len
+    | App (r1, r2, _, _) -> S.append (to_string r1) (to_string r2)
+
   (* cursors *)
   module Cursor = struct
 
@@ -355,6 +361,7 @@ module Make(S : STRING)(C : CONTROL) = struct
 	  else
 	    { c with
 		leaf = leaf;
+
 		path = Left (c.path, Str (s, ofs + 1, len - 1)) }
 	else if i = len - 1 then
 	  { lofs = c.lofs + len - 1;
@@ -659,6 +666,9 @@ struct
   include Make(SorF)(Control)
   let of_function n f = of_string (SorF.F (n, f))
   let of_string s = of_string (SorF.S s)
+  let to_string r = match to_string r with
+    | S s      -> s
+    | F (n, f) -> String.init n f
 end
 
 
@@ -688,7 +698,7 @@ module MakeArray(X : PrintableType) = struct
 
   include Make(A)(C)
 
-  let of_array = of_string
+  let of_array a = of_string (Array.copy a)
 
   let create n v = of_string (Array.make n v)
 
