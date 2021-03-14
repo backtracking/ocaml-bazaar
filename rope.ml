@@ -13,6 +13,10 @@
 (*                                                                        *)
 (**************************************************************************)
 
+(* TODO
+   - equality/comparison of ropes (using Cursor)
+*)
+
 exception Out_of_bounds
 
 module type STRING = sig
@@ -518,101 +522,6 @@ module Make(S : STRING)(C : CONTROL) = struct
   end (* Cursor *)
 
 end
-
-(********
-
-(* cursors *)
-
-type path =
-  | Top
-  | Left of path * t
-  | Right of t * path
-
-type cursor = {
-  pos : int;    (* position of the cursor *)
-  lofs: int;    (* offset of the current leaf *)
-  leaf: t;      (* the leaf i.e. Str (str,ofs,len) *)
-  path: path;   (* context = zipper *)
-}
-
-(* cursor -> rope *)
-let rec unzip t = function
-  | Top -> t
-  | Left (p, tr) -> unzip (mk_app t tr) p
-  | Right (tl, p) -> unzip (mk_app tl t) p
-
-let rope_of_cursor pos =
-  unzip pos.leaf pos.path
-
-let rec zip_leftmost p = function
-  | Str _ as leaf -> { pos = 0; lofs = 0; leaf = leaf; path = p }
-  | App (t1, t2, _, _) -> zip_leftmost (Left (p, t2)) t1
-
-let start = zip_leftmost Top
-
-let cursor_at_start c = c.pos = 0
-
-let rec cursor_pop = function
-  | { pos = 0; lofs = 0; leaf = Str (s, ofs, 1); path = p } as c ->
-      String.unsafe_get s ofs,
-      begin match p with
-	| Top -> { c with leaf = empty; path = Top }
-	| Left (p, r) -> zip_leftmost p r
-	| Right _ -> assert false
-      end
-  | { pos = 0; lofs = 0; leaf = Str (_, _, 0); path = p } ->
-      assert (p = Top);
-      raise Not_found
-  | { pos = 0; lofs = 0; leaf = Str (s, ofs, len) } as c ->
-      String.unsafe_get s ofs,
-      { c with leaf = Str (s, ofs+1, len-1) }
-  | _ ->
-      assert false
-
-let moveto r i =
-  let rec zip lofs p = function
-    | Str (_, _, len) as leaf when lofs <= i && i < lofs+len ->
-	{ pos = i; lofs = lofs; leaf = leaf; path = p }
-    | Str _ ->
-	Format.eprintf "len(r) = %d lofs = %d i = %d@." (len r) lofs i;
-	assert false
-    | App (t1, t2, _, _) ->
-	let n1 = len t1 in
-	if i < lofs + n1 then
-	  zip lofs (Left (p, t2)) t1
-	else
-	  zip (lofs + n1) (Right (t1, p)) t2
-  in
-  zip 0 Top r
-
-let cursor_get_or_exit c i = match c with
-  | { lofs = lofs; leaf = Str (s, ofs, len) } when lofs <= i && i < lofs+len ->
-      String.unsafe_get s (ofs + i - lofs)
-  | _ ->
-      raise Exit
-
-let rec cursor_get c i = match c with
-  | { lofs = lofs; leaf = Str (s, ofs, len) } when lofs <= i && i < lofs+len ->
-      String.unsafe_get s (ofs + i - lofs)
-  | { lofs = lofs; leaf = Str (_, _, ls); path = p } ->
-      let rec lookup_rope lofs ls = function
-	| Top ->
-	    raise Not_found
-	| Left (p, r) ->
-	    let j = i - (lofs + ls) in
-	    let lr = len r in
-	    if 0 <= j && j < lr then get r j else lookup_rope lofs (ls+lr) p
-	| Right (l, p) ->
-	    let ll = len l in
-	    let llofs = lofs - ll in
-	    let j = i - llofs in
-	    if 0 <= j && j < ll then get l j else lookup_rope llofs (ll+ls) p
-      in
-      lookup_rope lofs ls p
-  | _ ->
-      assert false
-
-*****)
 
 (* flat strings *)
 module Str = struct
