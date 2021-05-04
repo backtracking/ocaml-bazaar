@@ -147,11 +147,5 @@
  (name trie)
  (modules trie))
 
-(library
- (name vector)
- (modules vector))
-(test
- (name test_vector)
- (modules test_vector)
- (libraries vector))
+
 
