@@ -78,6 +78,14 @@
  (modules parse_arith))
 
 (library
+ (name permutation)
+ (modules permutation))
+(test
+ (name test_permutation)
+ (modules test_permutation)
+ (libraries permutation))
+
+(library
  (name prtree)
  (modules prtree))
 
