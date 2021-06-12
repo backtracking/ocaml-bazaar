@@ -28,9 +28,27 @@ val transposition: int -> int -> int -> permutation
 val apply: permutation -> int -> int
 (** [permutation p i] returns p(i) *)
 
+val count_inversions: permutation -> int
+(** [count_inversions p] returns the total number of inversions in [p],
+    that is the number of pairs (i,j) such that i<j and p(i)>p(j).
+    Runs in time O(n log n) and space O(n) *)
+
+val sign: permutation -> int
+(** returns -1 or 1 *)
+
+val next: permutation -> permutation
+(** [next p] is the permutation right after [p] in lexicographic order.
+    Raises [Not_found] if [p] is the last in lexicographic order,
+    that is (n-1 n-2 ... 1 0).
+    Iterating [next] from [identity n] generates the [n!] permutations.
+    Runs in time and space O(n). *)
+
 val random: int -> permutation
 (** [random n] returns a random permutation of size [n], with a uniform
     distribution *)
+
+val of_array: int array -> permutation
+(** raises [Invalid_argument] is [a] is not a permutation of 0,...,n-1 *)
 
 val permute_array: permutation -> 'a array -> 'a array
 (** [permute_array p a] returns a new array, obtained by permuting [a]
@@ -39,8 +57,33 @@ val permute_array: permutation -> 'a array -> 'a array
 val permute_array_in_place: permutation -> 'a array -> unit
 (** same thing, but in place. Note: temporarily uses space O(n) *)
 
+val permute_list: permutation -> 'a list -> 'a list
+
 val print: Format.formatter -> permutation -> unit
 (** one-line notation, that is, (p(0) p(1) ... p(n-1)) *)
+
+module Cycles : sig
+
+  type cycle = int list
+
+  type t = cycle list
+
+  val decompose: permutation -> t
+  (** decomposes a permutation into a product of cycles *)
+
+  val recompose: t -> permutation
+  (** Returns the permutation corresponding to a product of cycles.
+      The list must include singleton cycles.
+      Raises [Invalid_argument] if the argument is not a valid
+      permutation. *)
+
+  val canonical: t -> t
+  (** Within each cycle, put the smallest number first.
+      Sorts cycles in decreasing order of the first number. *)
+
+  val print: Format.formatter -> t -> unit
+
+end
 
 (**/**)
 

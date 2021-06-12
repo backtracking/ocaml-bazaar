@@ -17,8 +17,36 @@ let test n =
   assert (compose ip p = identity n);
   for i = 0 to n - 1 do
     assert (apply p (apply ip i) = i)
-  done
+  done;
+  let cl = Cycles.decompose p in
+  printf "  = %a@." Cycles.print cl;
+  assert (p = Cycles.recompose cl);
+  (try printf " => %a@." print (next p) with Not_found -> ());
+  let inv = ref 0 in
+  for i = 0 to n-2 do for j = i+1 to n-1 do
+    if apply p i > apply p j then incr inv
+  done done;
+  assert (!inv = count_inversions p);
+  let q = random n in
+  assert (inverse (compose p q) = compose (inverse q) (inverse p));
+  assert (sign (compose p q) = sign p * sign q)
+
 
 let () =
-  for n = 1 to 10 do test n done
+  for n = 0 to 10 do test n done;
+  test 42;
+  printf "---@.";
+  let rec loop p =
+    printf "%a@." print p;
+    try loop (next p) with Not_found -> () in
+  loop (identity 4);
+  printf "---@.";
+  let cl = [[3;1;6]; [5;4]; [2]; [0]] in
+  printf "p = %a@." Cycles.print cl;
+  printf "p = %a@." Cycles.print (Cycles.canonical cl);
+  let p = Cycles.recompose cl in
+  printf "p = %a@." print p;
+  ()
+
+
 

@@ -79,7 +79,8 @@
 
 (library
  (name permutation)
- (modules permutation))
+ (modules permutation)
+ (libraries fenwick))
 (test
  (name test_permutation)
  (modules test_permutation)
