@@ -20,20 +20,22 @@
 
 type t = int array
 
-let create n = Array.make (n + 1) 0
+let create n =
+  if n < 0 then invalid_arg "create";
+  Array.make (n + 1) 0
 
-(* add [i] occurrences of value [x] *)
-let rec add t x i =
+(* add [delta] occurrences of value [x] *)
+let rec add t delta x =
   if x < Array.length t then begin
-    t.(x) <- t.(x) + i;
-    add t (x lor (x+1)) i
+    t.(x) <- t.(x) + delta;
+    add t delta (x lor (x+1))
   end
 
 (* note: x lor (x+1) turn on the rightmost 0-bit (Hacker's Delight, 2.1) *)
 
-let add t x i =
+let add t ~delta x =
   if x < 0 || x >= Array.length t then invalid_arg "add";
-  add t x i
+  add t delta x
 
 (* prefix sum = sum over all indexes <= x *)
 let rec psum t x =
