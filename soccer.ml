@@ -61,23 +61,28 @@ let () =
     ) in
   visit 0
 
+let count = ref (-1)
+
 let print fmt o =
+  incr count;
   let sc = Array.make 4 0 in
   let print fmt = function
     | W -> fprintf fmt "W"
     | L -> fprintf fmt "L"
     | D -> fprintf fmt "D" in
   for g = 0 to 5 do
-    fprintf fmt "%a" print o.(g);
     let i, j = game g in
     match o.(g) with
     | W -> sc.(i) <- sc.(i) + 3
     | L -> sc.(j) <- sc.(j) + 3
     | D -> sc.(i) <- sc.(i) + 1; sc.(j) <- sc.(j) + 1
   done;
-  fprintf fmt " ";
-  for i = 0 to 3 do fprintf fmt " %d" sc.(i) done
+  for i = 0 to 3 do fprintf fmt "%d " sc.(i) done;
+  for g = 0 to 5 do
+    fprintf fmt "%a" print o.(g);
+  done;
+  fprintf fmt " (%d)" !count
 
 let () =
-  Hashtbl.iter (fun o _ -> printf "%a@." print o) outcomes;
-  printf "%d outcomes@." (Hashtbl.length outcomes)
+  Hashtbl.iter (fun o _ -> printf "%a@." print o) outcomes
+  (* printf "%d outcomes@." (Hashtbl.length outcomes) *)
