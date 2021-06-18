@@ -33,6 +33,9 @@ let apply p i =
   if i < 0 || i >= p.size then invalid_arg "apply";
   p.pi.(i)
 
+let to_array p =
+  Array.copy p.pi
+
 let orbit p i =
   if i < 0 || i >= p.size then invalid_arg "orbit";
   let rec build o j = if j = i then List.rev o else build (j :: o) p.pi.(j) in
@@ -109,6 +112,16 @@ let next p =
   let rec loop i j = if i < j then (swap i j; loop (i+1) (j-1)) in
   loop i (n-1);
   p
+
+let all n =
+  if n < 0 then invalid_arg "all";
+  let rec build acc p =
+    let acc = p :: acc in
+    match next p with
+    | p -> build acc p
+    | exception Not_found -> List.rev acc
+  in
+  build [] (identity n)
 
 open Format
 

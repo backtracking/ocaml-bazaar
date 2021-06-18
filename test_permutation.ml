@@ -41,6 +41,7 @@ let () =
     try loop (next p) with Not_found -> () in
   loop (identity 4);
   printf "---@.";
+  assert (List.length (all 4) = 24);
   let cl = [[3;1;6]; [5;4]; [2]; [0]] in
   printf "p = %a@." Cycles.print cl;
   printf "p = %a@." Cycles.print (Cycles.canonical cl);

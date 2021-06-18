@@ -136,6 +136,12 @@
  (name skew_heap)
  (modules skew_heap))
 
+(executable
+ (name soccer)
+ (promote (until-clean))
+ (modules soccer)
+ (libraries permutation))
+
 (library
  (name suffix_tree)
  (modules suffix_tree))

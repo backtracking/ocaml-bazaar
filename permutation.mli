@@ -28,6 +28,9 @@ val transposition: int -> int -> int -> permutation
 val apply: permutation -> int -> int
 (** [permutation p i] returns p(i) *)
 
+val to_array: permutation -> int array
+(** returns the permutation as an array *)
+
 val count_inversions: permutation -> int
 (** [count_inversions p] returns the total number of inversions in [p],
     that is the number of pairs (i,j) such that i<j and p(i)>p(j).
@@ -38,10 +41,14 @@ val sign: permutation -> int
 
 val next: permutation -> permutation
 (** [next p] is the permutation right after [p] in lexicographic order.
-    Raises [Not_found] if [p] is the last in lexicographic order,
+    Raises [Not_found] if [p] is the last permutation in lexicographic order,
     that is (n-1 n-2 ... 1 0).
     Iterating [next] from [identity n] generates the [n!] permutations.
     Runs in time and space O(n). *)
+
+val all: int -> permutation list
+(** all permutations in lexicographic order.
+    Beware that is is costly, namely time and space O(n * n!) *)
 
 val random: int -> permutation
 (** [random n] returns a random permutation of size [n], with a uniform
