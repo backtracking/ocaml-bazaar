@@ -40,6 +40,7 @@ let () =
   printf "Ack(4,2) = 2^(2^16)-3 = @[%a@]@." print ack_4_2;
   printf "ll(Ack(4,2)) = %d@." (to_int (ll ack_4_2));
   for n = 0 to 100 do assert (to_int (of_int n) = n) done;
+  assert (to_int (of_int max_int) = max_int);
   for a = 0 to 10 do for b = 0 to 10 do
     assert (add (of_int a) (of_int b) == of_int (a + b));
     (* FIXME *)
@@ -48,4 +49,5 @@ let () =
   done done;
   printf "|h(8)| = %d@." (size (h 8));
   printf "|tree h(8)| = %d@." (tree_size (h 8));
+  printf "%a@." (print2 ~max_digits:1000) ack_4_1;
   ()

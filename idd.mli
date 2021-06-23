@@ -135,6 +135,11 @@ val printer: Format.formatter -> idd -> unit
   (** prints a number as a value of type [int], when possible,
       and with function [print] above in any case *)
 
+val print2: max_digits:int -> Format.formatter -> idd -> unit
+  (** Prints a number in base 2.
+      Raises [Invalid_argument] if the number of digits exceeds [max_digits].
+      This is a guard against any attempt at printing a too large number. *)
+
 (** {2 Hash tables and memo functions} *)
 
 val hash: idd -> int

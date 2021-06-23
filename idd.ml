@@ -304,6 +304,19 @@ let printer fmt n =
     try fprintf fmt "%d" (to_int n) with _ -> fprintf fmt "<too big>" in
   fprintf fmt "%a = @[%a@]" p n print n;;
 
+let print2 ~max_digits fmt n =
+  if compare (l n) (of_int max_digits) > 0 then invalid_arg "print2";
+  let rec print d n =
+    assert (d >= 1);
+    if n == zero then fprintf fmt "%s0" (String.make (d-1) '0')
+    else if n == one then fprintf fmt "%s1" (String.make (d-1) '0')
+    else (
+      let dlo = 1 lsl (to_int n.p) in
+      print (d - dlo) n.hi;
+      print dlo       n.lo
+    ) in
+  if n == zero then fprintf fmt "0" else print (to_int (l n)) n
+
 (* TODO
 - to_float ?
 - of/to_z
