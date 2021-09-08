@@ -42,6 +42,15 @@
  (modules dlxm))
 
 (library
+ (name dyadic)
+ (modules dyadic)
+ (libraries zarith))
+(test
+ (name test_dyadic)
+ (modules test_dyadic)
+ (libraries dyadic))
+
+(library
  (name fenwick)
  (modules fenwick))
 (test
