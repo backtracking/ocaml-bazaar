@@ -56,6 +56,8 @@ val sub: idd -> idd -> idd
 val mul: idd -> idd -> idd
   (** multiplication *)
 
+val twice: idd -> idd
+  (** 2n *)
 
 (** {2 Some particular numbers} *)
 
@@ -66,7 +68,7 @@ val x': idd -> idd
   (** x'(q) = x(q) - 1 = 2^(2^q) - 1 *)
 
 val c: idd -> idd -> idd -> idd
-  (** [c lo p hi] returns [lo + x(p) * hi], with no constraint on [c],
+  (** [c lo p hi] returns [lo + x(p) * hi], with no constraint on [p],
       [lo] and [hi]. *)
 
 val h: int -> idd
@@ -83,13 +85,14 @@ val l: idd -> idd
   (** binary length = number of significant bits *)
 
 val ll: idd -> idd
-  (** ll(n) = if n < 2 then 0 else l(l(n) - 1) *)
+  (** binary depth ll(n) = if n < 2 then 0 else l(l(n) - 1) *)
 
 val size: idd -> int
   (** number of distinct nodes (zero and one excluded) *)
 
 val tree_size: idd -> int
-  (** number of nodes when considered as a tree (zero and one excluded) *)
+  (** number of nodes when considered as a tree (zero and one excluded)
+      CAVEAT: the result can be large and can overflow type int *)
 
 
 (** {2 Comparisons} *)

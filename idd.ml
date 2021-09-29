@@ -240,7 +240,7 @@ let dfs vzero vone vnode n =
 let size n =
   let res = ref 0 in dfs () () (fun _ _ _ -> incr res) n; !res
 let tree_size n =
-  dfs 1 1 (fun x y z -> x+y+z+1) n
+  dfs 0 0 (fun x y z -> x+y+z+1) n
 
 (* conversions *)
 
