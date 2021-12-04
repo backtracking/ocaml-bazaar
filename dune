@@ -3,6 +3,10 @@
   (flags (:standard -w -27-26-32))))
 
 (library
+ (name arrays)
+ (modules arrays))
+
+(library
  (name bitset)
  (modules bitset))
 (test
