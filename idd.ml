@@ -22,7 +22,7 @@ type idd = {
   hi: idd;
 }
   (** this is lo + x(p) * hi
-      invariant max(lo,hi) < x(p) *)
+      invariant max(lo,hi) < x(p), 0 < hi *)
 
 let rec zero = { u = 0; lo = zero; p = zero; hi = zero }
 let rec one  = { u = 1; lo = one ; p = zero; hi = zero }
@@ -135,7 +135,7 @@ let rec c lo p hi =
   if cmp_p_lop = 0 then c1 lo.lo p (add hi lo.hi) else
   c (c lo.lo p hi) lo.p lo.hi
 
-(* lo + x(p) * hi, with the constraint g < x(p) *)
+(* lo + x(p) * hi, with the constraint lo < x(p) *)
 and c1 lo p hi =
   let cmp_p_hip = compare p hi.p in
   if cmp_p_hip > 0 then create lo p hi else
@@ -158,6 +158,39 @@ and twice a = memo1 htwice compute_twice a and compute_twice a =
   if a == zero then zero else
   if a == one  then two  else
   c (twice a.lo) a.p (twice a.hi)
+
+let hlogandm = H2.create 8192
+let hlogorm  = H2.create 8192
+let hlogxorm = H2.create 8192
+
+let rec logand a b =
+  if a == zero then zero
+  else if a == b then a
+  else if compare a b > 0 then logand b a
+  else if compare a.p b.p < 0 then logand a b.lo else logandm a b
+
+and logandm a b = memo2 hlogandm compute_logandm a b and compute_logandm a b =
+  create (logand a.lo b.lo) a.p (logand a.hi b.hi)
+
+let rec logor a b =
+  if a == zero then b
+  else if a == b then a
+  else if compare a b > 0 then logor b a
+  else if compare a.p b.p < 0 then create (logor a b.lo) b.p b.hi
+  else logorm a b
+
+and logorm a b = memo2 hlogorm compute_logorm a b and compute_logorm a b =
+  create (logor a.lo b.lo) a.p (logor a.hi b.hi)
+
+let rec logxor a b =
+  if a == zero then b
+  else if a == b then zero
+  else if compare a b > 0 then logxor b a
+  else if compare a.p b.p < 0 then create (logxor a b.lo) b.p b.hi
+  else logxorm a b
+
+and logxorm a b = memo2 hlogxorm compute_logxorm a b and compute_logxorm a b =
+  create (logxor a.lo b.lo) a.p (logxor a.hi b.hi)
 
 (* subtract *)
 
@@ -194,9 +227,9 @@ let sub a b =
   if b == one then pred a else
   (succ (add a (nt b (succ a.p)))).lo
 
-(* remove MSB: rmsb(n) = (n - 2^i, l(n) - 1) for n > 0 *)
+(* remove MSB: rmsb(n) = (n - 2^i, i = l(n) - 1) for n > 0 *)
 let rec rmsb n =
-  assert (n != zero);
+  if n == zero then invalid_arg "rmsb";
   if n == one then zero, zero else
   let e, l = rmsb n.hi in create n.lo n.p e, imsb l n.p
 
@@ -214,7 +247,7 @@ let power2 i = imsb zero i (* 2^i *)
 
 let pop = memo_rec1 (fun pop n ->
   if n == zero then zero else if n == one then one
-   else add (pop n.lo) (pop n.hi))
+  else add (pop n.lo) (pop n.hi))
 
 (* product *)
 
@@ -278,6 +311,7 @@ let rec to_int n =
 open Format
 
 let print fmt n =
+  if n == zero || n == one then invalid_arg "print";
   let idx = ref 1 in
   let visit lo p hi =
     if !idx > 1 then fprintf fmt "@\n";
@@ -302,7 +336,7 @@ let parse sl =
 let printer fmt n =
   let p fmt n =
     try fprintf fmt "%d" (to_int n) with _ -> fprintf fmt "<too big>" in
-  fprintf fmt "%a = @[%a@]" p n print n;;
+  fprintf fmt "%a = @[%a@]" p n print n
 
 let print2 ~max_digits fmt n =
   if compare (l n) (of_int max_digits) > 0 then invalid_arg "print2";

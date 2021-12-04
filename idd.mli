@@ -59,6 +59,17 @@ val mul: idd -> idd -> idd
 val twice: idd -> idd
   (** 2n *)
 
+val rmsb: idd -> idd * idd
+  (** remove most significant bit i.e.
+        rmsb n = (n - 2^i, i = l(n) - 1) for n > 0
+      Raises [Invalid_argument] is [n] is 0. *)
+
+(** {2 Bitwise operations} *)
+
+val logand: idd -> idd -> idd
+val logor : idd -> idd -> idd
+val logxor: idd -> idd -> idd
+
 (** {2 Some particular numbers} *)
 
 val x: idd -> idd
@@ -121,7 +132,7 @@ val to_int: idd -> int
 val of_int: int -> idd
 
 val print: Format.formatter -> idd -> unit
-  (** prints a number in the following format {[
+  (** prints a number n>1 in the following format {[
         2 = (0, 0, 1)
         3 = (1, 0, 1)
         4 = (2, 2, 3)

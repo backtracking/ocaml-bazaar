@@ -48,6 +48,9 @@ let () =
     assert (add (of_int a) (of_int b) == of_int (a + b));
     if a >= b then assert (sub (of_int a) (of_int b) == of_int (a - b));
     assert (mul (of_int a) (of_int b) == of_int (a * b));
+    assert (logand (of_int a) (of_int b) == of_int (a land b));
+    assert (logor (of_int a) (of_int b) == of_int (a lor b));
+    assert (logxor (of_int a) (of_int b) == of_int (a lxor b));
   done done;
   printf "|h(8)| = %d@." (size (h 8));
   printf "|tree h(8)| = %d@." (tree_size (h 8));
@@ -57,3 +60,41 @@ let () =
   let x = mul x x in
   printf "s(x) = %d@." (size x);
   ()
+
+let mem x s =
+  logand (power2 x) s != zero
+
+let test_fib n =
+  printf "test_fib %d@." n;
+  let rec fib s a b n =
+    if n = 0 then s else fib (logor s (power2 (of_int a))) b (a+b) (n-1) in
+  let s = fib zero 0 1 n in
+  assert (pop s == of_int (n-1)); (* two occurrences of element 1 *)
+  (* printf "  S=%a@." (print2 ~max_digits:1000) s; *)
+  printf "  s(S) = %d@." (size s);
+  let _, i = rmsb s in
+  printf "  max(S) = fib(%d) = %d@." (n-1) (to_int i);
+  assert (mem zero s);
+  assert (mem one s);
+  assert (mem two s);
+  assert (mem three s);
+  assert (not (mem four s));
+  assert (mem five s);
+  assert (mem (of_int 610) s);
+  assert (not (mem (of_int 609) s));
+  assert (not (mem (of_int 611) s));
+  ()
+
+let () = test_fib 90
+  (* max = fib(89) = 1779979416004714189 *)
+
+let () =
+  for n = 2 to 1000 do
+    let i = of_int n in
+    if size i = to_int (pop i) * to_int (ll i) then (
+    printf "n = %d = %a@." n (print2 ~max_digits:50) i;
+    printf "  %d <= %d * %d@." (size i) (to_int (pop i)) (to_int (ll i));
+    printf "  p = %d@." (to_int (pred (ll i)));
+    printf "  @[%a@]@." print i
+    )
+  done
