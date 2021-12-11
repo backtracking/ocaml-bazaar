@@ -19,3 +19,6 @@ val fix:  int -> ((int -> 'a) -> int -> 'a) -> 'a array
 
 val shuffle: 'a array -> unit
   (** Shuffle an array using Knuth's suffle. *)
+
+val inverse_in_place: int array -> unit
+  (** inverse a permutation, in place *)

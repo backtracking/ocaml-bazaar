@@ -5,6 +5,10 @@
 (library
  (name arrays)
  (modules arrays))
+(test
+ (name test_arrays)
+ (modules test_arrays)
+ (libraries arrays))
 
 (library
  (name bitset)
@@ -81,10 +85,6 @@
  (name test_idd)
  (modules test_idd)
  (libraries idd))
-
-(library
- (name inverse_in_place)
- (modules inverse_in_place))
 
 (library
  (name leftistheap)
