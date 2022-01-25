@@ -25,6 +25,8 @@ let testl l =
   assert (union s s = s);
   assert (diff s s = empty);
   assert (disjoint empty s);
+  assert (List.of_seq (to_seq s) = l);
+  assert (List.of_seq (to_rev_seq s) = List.rev l);
   ()
 
 let () =
@@ -40,4 +42,7 @@ let () = testl [2; 3; 4; 5]
 let () = testl [62]
 let () = testl [0; 62]
 let () = testl [60; 61; 62]
+
+let () = assert (to_seq empty () = Seq.Nil)
+let () = assert (to_rev_seq empty () = Seq.Nil)
 

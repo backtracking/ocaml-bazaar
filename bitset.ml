@@ -171,13 +171,13 @@ let equal = (==)
 let max_value = Sys.int_size - 1
 
 let print fmt s =
-  Format.fprintf fmt "{";
   let rec pr = function
     | [] -> ()
     | x :: l ->
 	Format.fprintf fmt "%d" x; if l <> [] then Format.fprintf fmt ",@,";
 	pr l
   in
+  Format.fprintf fmt "{";
   pr (elements s);
   Format.fprintf fmt "}"
 
@@ -191,7 +191,16 @@ let rec to_seq_from x s =
   else if mem x s then fun () -> Seq.Cons (x, to_seq_from (x + 1) s)
   else to_seq_from (x + 1) s
 
-let to_seq = to_seq_from 0
+let to_seq s =
+  if is_empty s then Seq.empty else to_seq_from (min_elt s) s
+
+let rec to_rev_seq_from x s =
+  if x < min_elt s then Seq.empty
+  else if mem x s then fun () -> Seq.Cons (x, to_rev_seq_from (x - 1) s)
+  else to_rev_seq_from (x - 1) s
+
+let to_rev_seq s =
+  if is_empty s then Seq.empty else to_rev_seq_from (max_elt s) s
 
 let rec add_seq seq s = match seq () with
   | Seq.Nil -> s

@@ -49,6 +49,12 @@
  (name dlxm)
  (modules dlxm))
 
+(executable
+ (name dlx_queens)
+ (promote (until-clean))
+ (modules dlx_queens)
+ (libraries dlx))
+
 (library
  (name dyadic)
  (modules dyadic)
