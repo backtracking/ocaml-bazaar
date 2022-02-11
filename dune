@@ -189,5 +189,10 @@
  (name trie)
  (modules trie))
 
+(executable
+ (name wordle)
+ (flags ())
+ (promote (until-clean))
+ (modules wordle))
 
 
