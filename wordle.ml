@@ -21,7 +21,7 @@ let set_secret s =
 let () =
   Arg.parse
     ["--cheat", Arg.Set cheat, "reveal the secret (debug)";
-     "--secret <word>", Arg.String set_secret, "play with that word";
+     "--secret", Arg.String set_secret, "word> play with that word";
     ]
     ((:=) dict)
     "wordle [options] dictionary"
@@ -93,10 +93,37 @@ let () =
   if !cheat then printf "secret word is %s@." secret
 
 module S = Set.Make(Char)
+module M = Map.Make(Char)
+
+(* mutliset of chars *)
+module B = struct
+
+  type t = int M.t
+
+  let empty = M.empty
+
+  let is_empty = M.is_empty
+
+  let add c b =
+    M.add c (try 1 + M.find c b with Not_found -> 1) b
+
+  let mem = M.mem
+
+  let remove c b =
+    try let n = M.find c b in if n = 1 then M.remove c b else M.add c (n-1) b
+    with Not_found -> b
+
+  let max = M.union (fun c n1 n2 -> Some (max n1 n2))
+
+  let print fmt b =
+    M.iter (fun c n -> assert (n > 0);
+                       for i = 1 to n do printf "%c " c done) b
+
+end
 
 let letters =
-  let rec scan s i = if i = 5 then s else scan (S.add secret.[i] s) (i+1) in
-  scan S.empty 0
+  let rec scan s i = if i = 5 then s else scan (B.add secret.[i] s) (i+1) in
+  scan B.empty 0
 
 let color_print fg bg c =
   printf "%s" ("\x1b[38;5;" ^ string_of_int fg ^ "m\x1b[48;5;" ^
@@ -112,21 +139,23 @@ let forall_char f =
 
 (* bad.(i) = set of letters excluded from position i
    good.(i) = true iff we already found the letter at position i
-   touse = set of letters that we have to use *)
-let do_help bad good touse =
+   touse = multiset of letters that we have to use
+   occ = letters for which we know the number of occurrences *)
+let do_help bad good touse occ =
   let rec descend t touse w i =
     if i = 5 then (
-      if S.is_empty touse then printf "@ %s" w
+      if B.is_empty touse then printf "@ %s" w
     ) else if good.(i) then
       test t touse w i secret.[i]
     else
       forall_char (test t touse w i)
   and test t touse w i c =
     if not (S.mem c bad.(i)) then
-      let touse = S.remove c touse in
-      try descend (Hashtbl.find t.Trie.branches c) touse (w ^ String.make 1 c)
-            (i+1)
-      with Not_found -> ()
+      if not (S.mem c occ) || B.mem c touse then
+        let touse = B.remove c touse in
+        try descend (Hashtbl.find t.Trie.branches c) touse (w ^ String.make 1 c)
+              (i+1)
+        with Not_found -> ()
   in
   printf "  @[possible answers:";
   descend words touse "" 0;
@@ -138,7 +167,8 @@ let () =
     let help_used = ref false in
     let bad = Array.make 5 S.empty in
     let good = Array.make 5 false in
-    let touse = ref S.empty in
+    let touse = ref B.empty in
+    let occ = ref S.empty in
     while true do
       if !turn = 7 then (
         printf "you loose!@.";
@@ -148,27 +178,40 @@ let () =
       printf "try %d: @?" !turn; flush stdout;
       let guess = String.uppercase_ascii (read_line ()) in
       if guess = "?" then (
-        do_help bad good !touse;
+        do_help bad good !touse !occ;
         help_used := true
       ) else if String.length guess <> 5 then
         printf "Please enter a 5 letter word@."
       else if not (Trie.mem words guess) then
         printf "Not in word list@."
       else (
+        let b = ref letters in
+        let u = ref B.empty in
+        (* scan first for good guesses only *)
+        for i = 0 to 4 do
+          let c = guess.[i] in
+          if c = secret.[i] then (good.(i) <- true; b := B.remove c !b)
+        done;
+        (* second scan *)
         for i = 0 to 4 do
           let c = guess.[i] in
           if c = secret.[i] then (
             print_good c;
-            good.(i) <- true;
-          ) else if S.mem c letters then (
+            u := B.add c !u;
+          ) else if B.mem c !b then (
             print_misplaced c;
-            touse := S.add c !touse;
-            bad.(i) <- S.add c bad.(i)
+            u := B.add c !u;
+            bad.(i) <- S.add c bad.(i);
+            b := B.remove c !b
           ) else (
             print_bad c;
-            for j = 0 to 4 do bad.(j) <- S.add c bad.(j) done
+            if B.mem c letters then
+              occ := S.add c !occ
+            else
+              for j = 0 to 4 do bad.(j) <- S.add c bad.(j) done
           )
         done;
+        touse := B.max !touse !u; (* improve current knowledge *)
         printf "@.";
         if guess = secret then (
           if !turn = 6 then printf "Phew! ";
