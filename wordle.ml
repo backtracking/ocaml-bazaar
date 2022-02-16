@@ -21,7 +21,7 @@ let set_secret s =
 let () =
   Arg.parse
     ["--cheat", Arg.Set cheat, "reveal the secret (debug)";
-     "--secret", Arg.String set_secret, "word> play with that word";
+     "--secret", Arg.String set_secret, "<word> play with that word";
     ]
     ((:=) dict)
     "wordle [options] dictionary"
@@ -87,7 +87,13 @@ let secret =
     done;
     assert false
   with End_of_file ->
-    if !secret = "" then !s else !secret
+    if !secret = "" then !s else (
+      if not (Trie.mem words !secret) then (
+        eprintf "'%s' not in word list@." !secret;
+        exit 1
+      );
+      !secret
+    )
 
 let () =
   if !cheat then printf "secret word is %s@." secret
@@ -140,7 +146,7 @@ let forall_char f =
 (* bad.(i) = set of letters excluded from position i
    good.(i) = true iff we already found the letter at position i
    touse = multiset of letters that we have to use
-   occ = letters for which we know the number of occurrences *)
+   occ = set of letters for which we know the number of occurrences *)
 let do_help bad good touse occ =
   let rec descend t touse w i =
     if i = 5 then (
