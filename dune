@@ -96,6 +96,12 @@
  (name leftistheap)
  (modules leftistheap))
 
+(executable
+ (name nerdle)
+ (flags ())
+ (promote (until-clean))
+ (modules nerdle))
+
 (library
  (name parray)
  (modules parray))
