@@ -14,12 +14,14 @@ module R = struct (* rational numbers *)
   type t = int * int
   let rec gcd n m = if m = 0 then n else gcd m (n mod m)
   let zero = 0, 1
-  let simplify (a, b) =
+  let simplify (a, b as r) =
     if b = 0 then raise Division_by_zero;
     if a = 0 then
       zero
+    else if b = 1 then
+      r
     else
-      let g = gcd (abs a) (abs b) in
+      let g = gcd (abs a) b in
       let a, b = a / g, b / g in
       if b < 0 then -a, -b else a, b
   let of_int n = n, 1
@@ -40,9 +42,24 @@ type v = V of R.t | O of char
 
 let ops = ['+', ( ++ ); '-', ( -- ); '*', ( ** ); '/', ( // )]
 
+type rope = E | N of rope * char * rope
+let empty = E
+let concat l c r = N (l, c, r)
+let rec to_string = function
+  | E -> "" | N (l, c, r) -> to_string l ^ String.make 1 c ^ to_string r
+let rec fold_char f acc = function
+  | E ->
+      acc
+  | N (l, c, r) ->
+      let acc = fold_char f acc l in
+      let acc = f acc c in
+      fold_char f acc r
+let rec length = function E -> 0 | N (l, _, r) -> 1 + length l + length r
+let rec of_string s lo hi =
+  if lo = hi then E else concat E s.[lo] (of_string s (lo + 1) hi)
+
 let eval s =
-  let n = String.length s in
-  let invalid () = bad "invalid expression %S" s in
+  let invalid () = bad "invalid expression %S" (to_string s) in
   let eval x c y = List.assoc c ops x y in
   let rec simplify op top = function
     | O c :: V x :: st when op c -> simplify op (eval x c top) st
@@ -60,14 +77,12 @@ let eval s =
   let simplify = function
     | V top :: st -> simplify (fun _ -> true) top st
     | [] | O _ :: _ -> invalid () in
-  let rec scan st i =
-    if i = n then match simplify st with [V r] -> r | _ -> invalid ()
-    else let st = match s.[i] with
-         | '0'..'9' as c -> push_int (Char.code c - Char.code '0') st
-         | '+' | '-' | '*' | '/' as c -> push_op c st
-         | _ -> assert false in
-         scan st (i + 1) in
-  scan [] 0
+  let scan st = function
+    | '0'..'9' as c -> push_int (Char.code c - Char.code '0') st
+    | '+' | '-' | '*' | '/' as c -> push_op c st
+    | _ -> assert false in
+  let st = fold_char scan [] s in
+  match simplify st with [V r] -> r | _ -> invalid ()
 
 let check_eqn s =
   let n = String.length s in
@@ -82,8 +97,8 @@ let check_eqn s =
   done;
   if !e = -1 then bad "missing = sign";
   if !e = 0 || !e = n - 1 then bad "missing side of equation";
-  let v1 = eval (String.sub s 0 !e) in
-  let v2 = eval (String.sub s (!e + 1) (n - !e -1)) in
+  let v1 = eval (of_string s 0 !e) in
+  let v2 = eval (of_string s (!e + 1) n) in
   if not (equal v1 v2) then bad "equation does not compute";
   ()
 
@@ -114,21 +129,21 @@ let () = printf "%d columns@." width
 
 (* enumerating all expressions / equations
 
-   by length: expr.(len) = table value -> string list
+   by length: expr.(len) = hash table value |-> string list
    count.(len) = total number of expressions of that length
-   eqn.(pos) = equations with '=' at that position
    ceqn.(pos) = number of equations with '=' at that position
 *)
 
 let () = printf "enumerating equations...@?"
 let const = Array.make (width - 1) []
+let digit = Array.init 10 (fun d -> Char.chr (Char.code '0' + d))
 let () =
-  const.(0) <- [""];
+  const.(0) <- [E];
   for len = 1 to width - 2 do
     let add s =
       for d = 0 to 9 do
-        let s = s ^ String.make 1 (Char.chr (Char.code '0' + d)) in
-      const.(len) <- s :: const.(len)
+        let s = concat s digit.(d) E in
+        const.(len) <- s :: const.(len)
       done in
     List.iter add const.(len - 1)
   done
@@ -138,7 +153,7 @@ let count = Array.make width 0
 let add s =
   try
     let v = eval s in
-    let len = String.length s in
+    let len = length s in
     Hashtbl.replace expr.(len) v
       (s :: try Hashtbl.find expr.(len) v with Not_found -> []);
     count.(len) <- 1 + count.(len)
@@ -151,30 +166,28 @@ let () =
     List.iter add const.(len);
     (* operations *)
     if len >= 3 then (
-      for pos = 1 to len - 2 do (* position of first operator *)
+      for pos = 1 to len - 2 do (* position of leftmost operator *)
         const.(pos) |> List.iter @@ fun sl ->
         iter (len-pos-1) @@ fun _ sr ->
-        let combine (c, _) = add (sl ^ String.make 1 c ^ sr) in
+        let combine (c, _) = add (concat sl c sr) in
         List.iter combine ops
       done
     )
   done
 
-let eqn = Array.make width []
 let ceqn = Array.make (width-1) 0
 let total = ref 0
-let random = ref ""
+let random = ref E
 let () =
   Random.self_init ();
-  let add pos s =
-    eqn.(pos) <- s :: eqn.(pos); ceqn.(pos) <- 1 + ceqn.(pos);
+  let add pos sl sr =
+    ceqn.(pos) <- 1 + ceqn.(pos);
     incr total;
-    if Random.int !total = 0 then random := s in
+    if Random.int !total = 0 then random := concat sl '=' sr in
   for pos = 1 to width - 2 do
-    iter pos @@ fun v sl ->
+    iter pos @@ fun v sl -> if v <> zero then
     (try Hashtbl.find expr.(width-pos-1) v with Not_found -> []) |>
-    List.iter @@ fun sr ->
-      if sl <> "0" && sr <> "0" then add pos (sl ^ "=" ^ sr)
+    List.iter @@ fun sr -> add pos sl sr
   done
 
 let () =
@@ -192,7 +205,7 @@ let () =
     done
   )
 
-let secret = if !secret = "" then !random else !secret
+let secret = if !secret = "" then to_string !random else !secret
 let () = if !cheat then printf "secret equation is %S@." secret
 
 module S = Set.Make(Char)
@@ -294,3 +307,4 @@ let () =
     done
   with Exit ->
     ()
+
