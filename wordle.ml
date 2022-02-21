@@ -221,7 +221,8 @@ let () =
         printf "@.";
         if guess = secret then (
           if !turn = 6 then printf "Phew! ";
-          printf "You win!%s@." (if !help_used then " (with help)" else "");
+          printf "You win!%s@."
+            (if !help_used || !cheat then " (with help)" else "");
           raise Exit
         );
         incr turn;
