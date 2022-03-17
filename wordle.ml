@@ -159,9 +159,9 @@ let do_help bad good touse occ =
     if not (S.mem c bad.(i)) then
       if not (S.mem c occ) || B.mem c touse then
         let touse = B.remove c touse in
-        try descend (Hashtbl.find t.Trie.branches c) touse (w ^ String.make 1 c)
-              (i+1)
-        with Not_found -> ()
+        match Hashtbl.find t.Trie.branches c with
+        | t -> descend t touse (w ^ String.make 1 c) (i+1)
+        | exception Not_found -> ()
   in
   printf "  @[possible answers:";
   descend words touse "" 0;
