@@ -177,7 +177,7 @@ let () =
     let occ = ref S.empty in
     while true do
       if !turn = 7 then (
-        printf "you loose!@.";
+        printf "you lose!@.";
         printf "the secret word was %s@." secret;
         raise Exit
       );
