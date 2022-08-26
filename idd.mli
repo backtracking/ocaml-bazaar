@@ -126,6 +126,8 @@ val xor1: idd -> idd
 
 (** {2 Conversions and pretty-printing} *)
 
+val idd_max_int: idd
+
 val to_int: idd -> int
   (** raises [Invalid_argument] if [n] is too large *)
 

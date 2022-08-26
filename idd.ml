@@ -293,10 +293,10 @@ let of_int n =
            (of_int (n lsr  (1 lsl p)) (p-1)) in
   of_int n pmax_of_int
 
-let max_int = of_int max_int
+let idd_max_int = of_int max_int
 
 let rec to_int n =
-  if compare n max_int > 0 then invalid_arg "to_int";
+  if compare n idd_max_int > 0 then invalid_arg "to_int";
   if n == zero then 0 else if n == one then 1 else
   to_int n.lo lor (to_int n.hi lsl (1 lsl to_int n.p))
 
