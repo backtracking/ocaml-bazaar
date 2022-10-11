@@ -228,5 +228,5 @@ let () =
         incr turn;
       )
     done
-  with Exit ->
-    ()
+  with Exit -> ()
+     | End_of_file -> printf "@."
