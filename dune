@@ -92,6 +92,10 @@
  (modules test_idd)
  (libraries idd))
 
+(executable
+ (name jotto)
+ (modules jotto))
+
 (library
  (name leftistheap)
  (modules leftistheap))
