@@ -116,8 +116,11 @@ let print l =
     (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ",@ ")
        pp_print_string) l
 
+let nbsol = ref 0
+
 let rec solve sol used n =
   if n = 5 then (
+    incr nbsol;
     List.iter print sol; printf "@."
   ) else
     PT.iter used
@@ -126,7 +129,9 @@ let rec solve sol used n =
           solve (!r :: sol) (used lor m) (n + 1))
       !words
 
-let () = solve [] 0 0
+let () =
+  solve [] 0 0;
+  printf "%d solutions@." !nbsol
 
 (*
 https://github.com/stew675/standup5x5/blob/master/nyt_wordle.txt
