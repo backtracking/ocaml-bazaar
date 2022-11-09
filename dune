@@ -124,6 +124,14 @@
  (libraries permutation))
 
 (library
+ (name pmpq)
+ (modules pmpq))
+(test
+ (name test_pmpq)
+ (modules test_pmpq)
+ (libraries parray pmpq))
+
+(library
  (name prtree)
  (modules prtree))
 
