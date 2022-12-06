@@ -8,32 +8,38 @@
   In the following, when both row and column are used, the row always
   comes first.  *)
 
-type 'a t
+module type S = sig
 
-val make: int -> int -> 'a -> 'a t
-  (** `make rows cols v` creates a fresh matrix of size `rows * cols`
-      Raises `Invalid_argument` is either `rows` or `cols` is negative *)
+  type 'a t
 
-val init: int -> int -> (int -> int -> 'a) -> 'a t
+  val make: int -> int -> 'a -> 'a t
+    (** `make rows cols v` creates a fresh matrix of size `rows * cols`
+        Raises `Invalid_argument` is either `rows` or `cols` is negative *)
 
-val rows: 'a t -> int
+  val init: int -> int -> (int -> int -> 'a) -> 'a t
 
-val cols: 'a t -> int
+  val rows: 'a t -> int
 
-val size: 'a t -> int * int
-  (** returns `(rows, cols)` *)
+  val cols: 'a t -> int
 
-val get: 'a t -> int -> int -> 'a
+  val size: 'a t -> int * int
+    (** returns `(rows, cols)` *)
 
-val set: 'a t -> int -> int -> 'a -> unit
+  val get: 'a t -> int -> int -> 'a
 
-val iter: ('a -> unit) -> 'a t -> unit
+  val set: 'a t -> int -> int -> 'a -> unit
 
-val iteri: (int -> int -> 'a -> unit) -> 'a t -> unit
+  val iter: ('a -> unit) -> 'a t -> unit
 
-val fold_left: ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
+  (* val iteri: (int -> int -> 'a -> unit) -> 'a t -> unit *)
 
-val map: ('a -> 'b) -> 'a t -> 'b t
+  val fold_left: ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
 
-val mapi: (int -> int -> 'a -> 'b) -> 'a t -> 'b t
+  (* val map: ('a -> 'b) -> 'a t -> 'b t
+   *
+   * val mapi: (int -> int -> 'a -> 'b) -> 'a t -> 'b t *)
 
+end
+
+module Flat: S
+module Rows: S

@@ -1,15 +1,5 @@
 
-open Matrix
-let () = ignore (make 0 0 0)
-
-let make = Array.make_matrix
-let rows = Array.length
-let cols m = Array.length m.(0)
-let size m = rows m, cols m
-let get m i j = m.(i).(j)
-let set m i j v = m.(i).(j) <- v
-let fold_left f v m =
-  Array.fold_left (Array.fold_left f) v m
+open Matrix.Flat
 
 let test nrows ncols =
   let m = make nrows ncols 0 in
@@ -24,7 +14,7 @@ let test nrows ncols =
   done;
   assert (fold_left (+) 0 m = nrows * ncols * 42)
 
-let limit = 200
+let limit = 300
 
 let () =
   for rows = 1 to limit do
@@ -34,11 +24,9 @@ let () =
   done
 
 (* tests
-
-        array of
-         arrays   Matrix
-  -----+--------+---------
-   200 | 3.732s |  5.115s
-
+          Rows    Flat
+  -----+--------+-------+
+   200 |   4.7s |  5.3s |
+   300 |  25.2s | 27.7s |
 *)
 
