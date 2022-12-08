@@ -13,7 +13,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Persistent arrays implemented using Backer's trick.
+(* Persistent arrays implemented using Baker's trick.
 
    A persistent array is a usual array (node Array) or a change into
    another persistent array (node Diff). Invariant: any persistent array is a
@@ -25,6 +25,7 @@
 *)
 
 type 'a t = 'a data ref
+
 and 'a data =
   | Array of 'a array
   | Diff of int * 'a * 'a t
@@ -32,7 +33,8 @@ and 'a data =
 let make n v =
   ref (Array (Array.make n v))
 
-let init n f = ref (Array (Array.init n f))
+let init n f =
+  ref (Array (Array.init n f))
 
 (* `reroot t` ensures that `t` becomes an `Array` node.
     This is written in CPS to avoid any stack overflow. *)
@@ -53,7 +55,8 @@ let rec rerootk t k = match !t with
 
 let reroot t = rerootk t (fun () -> ())
 
-let get t i = match !t with
+let get t i =
+  match !t with
   | Array a ->
       a.(i)
   | Diff _ ->
