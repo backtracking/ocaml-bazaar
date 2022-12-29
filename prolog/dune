@@ -1,0 +1,8 @@
+(ocamllex
+ (modules lexer))
+(menhir
+ (modules parser))
+(executable
+ (name miniprolog)
+ (promote (until-clean))
+ (flags ()))
