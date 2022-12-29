@@ -11,17 +11,13 @@
 %start file
 %type <Ast.file> file
 
-%start command
-%type <Ast.decl> command
+%start decl
+%type <Ast.decl> decl
 
 %%
 
 file:
 | dl = decl* EOF { dl }
-;
-
-command:
-| d = decl EOF { d }
 ;
 
 decl:
