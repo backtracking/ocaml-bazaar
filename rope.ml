@@ -14,7 +14,9 @@
 (**************************************************************************)
 
 (* TODO
+   - remove (see test_rope.ml)
    - equality/comparison of ropes (using Cursor)
+   - hash
 *)
 
 exception Out_of_bounds
