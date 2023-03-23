@@ -3,6 +3,7 @@ open Bitset
 
 let () = assert (cardinal full = Sys.int_size)
 let () = assert (max_elt full = Sys.int_size - 1)
+let () = assert (max_elt full = max_value)
 let () = assert (min_elt full = 0)
 let () = assert (union full full = full)
 let () = assert (union empty full = full)
