@@ -144,6 +144,14 @@
  (libraries pmpq))
 
 (library
+ (name pointer)
+ (modules pointer))
+(test
+ (name test_pointer)
+ (modules test_pointer)
+ (libraries pointer))
+
+(library
  (name prtree)
  (modules prtree))
 
