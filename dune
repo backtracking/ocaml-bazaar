@@ -124,7 +124,12 @@
 
 (executable
  (name parse_arith)
+ (promote (until-clean))
  (modules parse_arith))
+(executable
+ (name parse_arith_cont)
+ (promote (until-clean))
+ (modules parse_arith_cont))
 
 (library
  (name permutation)
