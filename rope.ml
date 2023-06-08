@@ -60,6 +60,8 @@ module type ROPE = sig
 
   val insert : t -> int -> t -> t
 
+  val split : t -> int -> t * t
+
   module Cursor : sig
 
     type cursor
@@ -304,6 +306,23 @@ module Make(S : STRING)(C : CONTROL) = struct
     | Str (s, ofs, len) -> S.sub s ofs len
     | App (r1, r2, _, _) -> S.append (to_string r1) (to_string r2)
 
+  (* 0 <= n <= length t *)
+  let rec split_rec n = function
+    | Str (s, ofs, len) ->
+        Str (s, ofs, n), Str (s, ofs + n, len - n)
+    | App (t1, t2, _, _) ->
+        let n1 = length t1 in
+        if n = n1 then t1, t2 else
+        if n < n1 then let t11, t12 = split_rec n t1 in t11, app (t12, t2) else
+                       let t21, t22 = split_rec (n-n1) t2 in app (t1, t21), t22
+
+  let split t len =
+    let n = length t in
+    if len < 0 || len > n then raise Out_of_bounds;
+    if len = 0 then empty, t else
+    if len = n then t, empty else
+    split_rec len t
+
   (* cursors *)
   module Cursor = struct
 
@@ -539,7 +558,23 @@ module Str = struct
 end
 
 module Control = struct let small_length = 256 let maximal_height = max_int end
-module S = Make(Str)(Control)
+module S = struct
+  include Make(Str)(Control)
+
+  let compare t1 t2 =
+    let n1 = length t1 and n2 = length t2 in
+    let rec cmp i c1 c2 =
+      if i = n1 then if i = n2 then 0 else -1 else
+      if i = n2 then 1 else
+      let c = Char.compare (Cursor.get c1) (Cursor.get c2) in
+      if c <> 0 then c else
+      cmp (i + 1) (Cursor.move_forward c1 1) (Cursor.move_forward c2 1) in
+    cmp 0 (Cursor.create t1 0) (Cursor.create t2 0)
+
+  let equal t1 t2 =
+    (* compare lengths first, since `length` is O(1) *)
+    length t1 = length t2 && compare t1 t2 = 0
+end
 
 
 (* ropes with function leaves *)

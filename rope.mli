@@ -112,6 +112,11 @@ module type ROPE = sig
         It is more equivalent to (but more efficient than)
         [sub t 0 i ++ r ++ sub t i (length t - i)] *)
 
+  val split : t -> int -> t * t
+    (** [split t len] splits the rope after [len] characters and returns
+        the two halves. This is equivalent to [sub t 0 len] and
+        [sub t len (length t - len)] but more efficient (a single descent. *)
+
   (** Cursors are persistent data structures to navigate within ropes.
       When several operations are to be performed locally on a rope
       (such as local deletions, insertions or even simple accesses),
@@ -236,6 +241,13 @@ module S : sig
   val of_string : string -> t
 
   val to_string : t -> string
+
+  val compare : t -> t -> int
+    (** [compare s0 s1] sorts [s0] and [s1] in lexicographical order. *)
+
+  val equal : t -> t -> bool
+    (** [equal s0 s1] is true if and only if [s0] and [s1] are
+        character-wise equal. *)
 
 end
 

@@ -31,6 +31,15 @@
  (modules test_braun)
  (libraries braun))
 
+(library
+ (name buffer2)
+ (modules buffer2)
+ (libraries vector))
+(test
+ (name test_buffer2)
+ (modules test_buffer2)
+ (libraries buffer2))
+
 (executable
  (name burr)
  (promote (until-clean))
