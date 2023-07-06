@@ -92,6 +92,14 @@
  (modules test_idd)
  (libraries idd))
 
+(library
+ (name itv)
+ (modules itv))
+(test
+ (name test_itv)
+ (modules test_itv)
+ (libraries itv))
+
 (executable
  (name jotto)
  (modules jotto))
