@@ -13,7 +13,11 @@ type t
 (** The abstract type of integer intervals.
 
     This is a purely applicative data structure.
-    Polymorphic equality, comparison, and hashing can be used on type `t`. *)
+    Polymorphic equality, comparison, and hashing can be used on type `t`.
+
+    The empty interval has a unique representation, so comparing an
+    interval to `empty` is fine. Yet using `is_empty` is encouraged.
+*)
 
 val empty: t
 (** empty interval *)
@@ -30,22 +34,29 @@ val length: t -> int
 (** Returns the number of integers in the interval.
     Raises `Invalid_argument` if the result does not fit in type `int`. *)
 
+val incl_incl: int -> int -> t
+val incl_excl: int -> int -> t
+val excl_incl: int -> int -> t
+val excl_excl: int -> int -> t
+(** Returns the interval from `lo` to `hi`, each endpoint being either
+    included (`incl`) or excluded (`excl`).
+    Any values are allowed, and the result can be an empty interval. *)
+
 val range: int -> int -> t
-(** `range lo hi` returns an interval from `lo` included to `hi` excluded.
-    Raises `Invalid_argument` if `lo > hi`. *)
+(** alias for `incl_excl` *)
 
 val left: t -> int
+(** Left endpoint of the interval, included.
+    Raises `Invalid_argument` if the interval is empty. *)
 val right: t -> int
-(** interval bounds, with `left` included and `right` excluded *)
+(** Right endpoint of the interval excluded.
+    Raises `Invalid_argument` if the interval is empty, or if the interval
+    goes up to `max_int` included. *)
 
 val smallest: t -> int
 val largest: t -> int
-(** intervals bounds, both included.
+(** Intervals bounds, both included.
     Raises `Invalid_argument` if the interval is empty. *)
-
-val fromto: int -> int -> t
-(** 'fromto lo hi` returns the interval from `lo` included to `hi`
-    included. Raises `Invalid_argument` if `lo > hi+1`. *)
 
 val split: t -> t * t
 (** splits an interval at midpoint. When there is an odd number of elements,

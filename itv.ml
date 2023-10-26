@@ -6,8 +6,7 @@ type t = {
   lo: int;
   hi: int;
 } (* both included
-     invariant: hi=max_int || lo <= hi+1
-     the interval is empty iff hi<max_int && lo=hi+1 *)
+     invariant: lo=1 and hi=0 (empty interval) or lo <= hi *)
 
 let empty =
   { lo = 1; hi = 0 }
@@ -28,6 +27,18 @@ let right i =
   if is_empty i || i.hi = max_int then invalid_arg "Itv.right";
   i.hi + 1
 
+let incl_incl lo hi =
+  if lo > hi then empty else { lo; hi }
+let incl_excl lo hi =
+  if lo >= hi then empty else { lo; hi-1 }
+let excl_incl lo hi =
+  if lo >= hi then empty else { lo+1; hi }
+let excl_excl lo hi =
+  if lo=max_int || lo+1 >= hi then empty else { lo+1; hi-1 }
+
+let range =
+  incl_excl
+
 let full =
   { lo = min_int; hi = max_int }
 
@@ -38,14 +49,6 @@ let length {lo; hi} =
   let w = hi - lo in
   if w < -1 || lo = min_int && hi = max_int then invalid_arg "Itv.length";
   w + 1
-
-let fromto lo hi =
-  if hi <> max_int && lo > hi+1 then invalid_arg "Itv.create";
-  { lo; hi }
-
-let range lo hi =
-  if hi = min_int || lo > hi then invalid_arg "Itv.range";
-  { lo; hi = hi - 1 }
 
 let split ({lo; hi} as i) =
   if is_empty i || lo = hi then i, empty else
