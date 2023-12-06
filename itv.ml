@@ -30,11 +30,11 @@ let right i =
 let incl_incl lo hi =
   if lo > hi then empty else { lo; hi }
 let incl_excl lo hi =
-  if lo >= hi then empty else { lo; hi-1 }
+  if lo >= hi then empty else { lo; hi=hi-1 }
 let excl_incl lo hi =
-  if lo >= hi then empty else { lo+1; hi }
+  if lo >= hi then empty else { lo=lo+1; hi }
 let excl_excl lo hi =
-  if lo=max_int || lo+1 >= hi then empty else { lo+1; hi-1 }
+  if lo=max_int || lo+1 >= hi then empty else { lo=lo+1; hi=hi-1 }
 
 let range =
   incl_excl

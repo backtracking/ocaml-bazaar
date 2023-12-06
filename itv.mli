@@ -48,6 +48,7 @@ val range: int -> int -> t
 val left: t -> int
 (** Left endpoint of the interval, included.
     Raises `Invalid_argument` if the interval is empty. *)
+
 val right: t -> int
 (** Right endpoint of the interval excluded.
     Raises `Invalid_argument` if the interval is empty, or if the interval
