@@ -104,6 +104,11 @@
  (name jotto)
  (modules jotto))
 
+(executable
+ (name latticemult)
+ (promote (until-clean))
+ (modules latticemult))
+
 (library
  (name leftistheap)
  (modules leftistheap))
