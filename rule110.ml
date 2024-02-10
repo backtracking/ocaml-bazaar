@@ -18,8 +18,13 @@
 
     This code adapts Gosper's Hashlife algorithm for one dimension.
     It reads an initial configuration on the first line and a number of
-    steps on the second line. It then prints the total number of 1-cells
-    in the final configuration.
+    steps on the second line. Then it prints the total number of 1-cells
+    in the final configuration. Example:
+
+      $ ./rule110
+      0001001101111100
+      5
+      11
 
     I proposed this as problem B at SWERC 2020-21; see https://swerc.eu/2020
     Unfortunately, no team solved it.
@@ -45,7 +50,7 @@ let count c = if c.size = 0 then pop.(c.bits) else c.bits
 module Cell = struct
   type t = cell
   let hash ({ left; right; _ } as c) =
-    (c.size + 19 * (left.uid + 19 * right.uid)) land max_int
+    (c.size + 19 * (left.uid + 19 * right.uid))
   let equal x y =
     x.size = y.size && x.left == y.left && x.right == y.right
 end
@@ -177,17 +182,7 @@ let of_string s =
       make (build lo mid) (build mid hi) in
   makeitbig (build 0 n)
 
-let rec print fmt ({bits;left;right; _} as c) =
-  let bit x = if x <> 0 then fprintf fmt "*" else fprintf fmt "." in
-  if c.size = 0 then for i = 1 downto 0 do bit (bits land (1 lsl i)) done
-  else begin print fmt left; print fmt right end
-let print fmt c =
-  fprintf fmt "%a (%d)" print c c.bits
-
 let c = of_string (read_line ())
 let n = read_int ()
-(* DEBUG *)
-(* let () = let c = ref c in
- *          for _ = 1 to n+1 do printf "%a@." print !c; c := steps 1 !c done *)
 let c = steps n c
 let () = Format.printf "%d@." c.bits
