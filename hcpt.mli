@@ -21,15 +21,19 @@
 *)
 
 module Make (X : sig
-  type key
-  val id: key -> int
+  type t
+  val id: t -> int
   type value
   val hash: value -> int
   val equal: value -> value -> bool
 end) : sig
-  type key = X.key
+  type key = X.t
   type value = X.value
+
   type t
+
+  val id: t -> int
+  (** unique *)
 
   val empty: t
 

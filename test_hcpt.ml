@@ -1,6 +1,6 @@
 
 module M = Hcpt.Make(struct
-  type key = int
+  type t = int
   let id n = n
   type value = string
   let hash = String.hash

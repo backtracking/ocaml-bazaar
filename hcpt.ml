@@ -16,26 +16,26 @@
 (** Hash-consed Patricia Trees *)
 
 module Make(X: sig
-  type key
-  val id: key -> int
+  type t
+  val id: t -> int
   type value
   val hash: value -> int
   val equal: value -> value -> bool
 end) = struct
 
-  type key = X.key
+  type key = X.t
   type value = X.value
+  type uid = int
 
   type t =
     | Empty
-    | Leaf of key * value
-    | Branch of int * int * t * t
+    | Leaf of uid * key * value
+    | Branch of uid * int * int * t * t
 
   (**** hash-consing machinery starts here... ********************************)
   let hash = function
     | Empty -> 0
-    | Leaf (k, _) -> X.id k
-    | Branch (p, _, _, _) -> p
+    | Leaf (id, _, _) | Branch (id, _, _, _, _) -> id
 
   let equal: t -> t -> bool =
     (==)
@@ -45,21 +45,23 @@ end) = struct
     type t = pt
     let hash = function
       | Empty -> 0
-      | Leaf (k, v) -> 31 * X.id k + X.hash v
-      | Branch (p, _, t0, t1) -> 19 * (19 * p + hash t0) + hash t1
+      | Leaf (_, k, v) -> 31 * X.id k + X.hash v
+      | Branch (_, p, _, t0, t1) -> 19 * (19 * p + hash t0) + hash t1
     let equal t0 t1 = match t0, t1 with
       | Empty, Empty -> true
-      | Leaf (k0, v0), Leaf (k1, v1) ->
+      | Leaf (_, k0, v0), Leaf (_, k1, v1) ->
           X.id k0 = X.id k1 && X.equal v0 v1
-      | Branch (p0, m0, t00, t01), Branch (p1, m1, t10, t11) ->
+      | Branch (_, p0, m0, t00, t01), Branch (_, p1, m1, t10, t11) ->
           p0 == p1 && m0 == m1 && t00 == t10 && t01 == t11
       | _ -> false
   end)
   let table = H.create 8192
+  let nextid = ref 1
   let hashcons n =
-    try H.find table n with Not_found -> H.add table n n; n
-  let leaf (k, v) = hashcons (Leaf (k, v))
-  let branch (p, m, t0, t1) = hashcons (Branch (p, m, t0, t1))
+    try H.find table n
+    with Not_found -> incr nextid; H.add table n n; n
+  let leaf (k, v) = hashcons (Leaf (!nextid, k, v))
+  let branch (p, m, t0, t1) = hashcons (Branch (!nextid, p, m, t0, t1))
   (**** ... and stops here ***************************************************)
 
   let empty =
@@ -73,13 +75,13 @@ end) = struct
 
   let rec mem k = function
     | Empty -> false
-    | Leaf (j,_) -> X.id k == X.id j
-    | Branch (_, m, l, r) -> mem k (if zero_bit (X.id k) m then l else r)
+    | Leaf (_, j,_) -> X.id k == X.id j
+    | Branch (_, _, m, l, r) -> mem k (if zero_bit (X.id k) m then l else r)
 
   let rec find k = function
     | Empty -> raise Not_found
-    | Leaf (j,x) -> if X.id k == X.id j then x else raise Not_found
-    | Branch (_, m, l, r) -> find k (if zero_bit (X.id k) m then l else r)
+    | Leaf (_, j,x) -> if X.id k == X.id j then x else raise Not_found
+    | Branch (_, _, m, l, r) -> find k (if zero_bit (X.id k) m then l else r)
 
   let find_opt k m = try Some (find k m) with Not_found -> None
 
@@ -87,8 +89,8 @@ end) = struct
      as these are little-endian Patricia trees *)
   let rec find_first_opt f = function
     | Empty -> None
-    | Leaf (j,x) -> if f j then Some (j,x) else None
-    | Branch (_, _, l, r) ->
+    | Leaf (_, j,x) -> if f j then Some (j,x) else None
+    | Branch (_, _, _, l, r) ->
       match find_first_opt f l, find_first_opt f r with
       | Some (lk,lv) , Some (rk,rv) ->
           if lk < rk then Some (lk,lv) else Some (rk,rv)
@@ -97,8 +99,8 @@ end) = struct
 
   let find_first f = function
     | Empty -> raise Not_found
-    | Leaf (j,x) -> if f j then (j,x) else raise Not_found
-    | Branch (_, _, l, r) ->
+    | Leaf (_, j,x) -> if f j then (j,x) else raise Not_found
+    | Branch (_, _, _, l, r) ->
       match find_first_opt f l, find_first_opt f r with
       | Some (lk,lv) , Some (rk,rv) -> if lk < rk then (lk,lv) else (rk,rv)
       | Some v, None | None, Some v -> v
@@ -106,8 +108,8 @@ end) = struct
 
   let rec find_last_opt f = function
     | Empty -> None
-    | Leaf (j,x) -> if f j then Some (j,x) else None
-    | Branch (_, _, l, r) ->
+    | Leaf (_, j,x) -> if f j then Some (j,x) else None
+    | Branch (_, _, _, l, r) ->
       match find_last_opt f l, find_last_opt f r with
       | Some (lk,lv) , Some (rk,rv) ->
           if lk > rk then Some (lk,lv) else Some (rk,rv)
@@ -116,8 +118,8 @@ end) = struct
 
   let find_last f = function
     | Empty -> raise Not_found
-    | Leaf (j,x) -> if f j then (j,x) else raise Not_found
-    | Branch (_, _, l, r) ->
+    | Leaf (_, j,x) -> if f j then (j,x) else raise Not_found
+    | Branch (_, _, _, l, r) ->
       match find_last_opt f l, find_last_opt f r with
       | Some (lk,lv) , Some (rk,rv) -> if lk > rk then (lk,lv) else (rk,rv)
       | Some v, None | None, Some v -> v
@@ -142,10 +144,10 @@ end) = struct
   let add k x t =
     let rec ins = function
       | Empty -> leaf (k,x)
-      | Leaf (j,_) as t ->
+      | Leaf (_, j,_) as t ->
         if X.id j == X.id k then leaf (k,x)
         else join (X.id k, leaf (k,x), X.id j, t)
-      | Branch (p,m,t0,t1) as t ->
+      | Branch (_, p,m,t0,t1) as t ->
         if match_prefix (X.id k) p m then
           if zero_bit (X.id k) m then
             branch (p, m, ins t0, t1)
@@ -167,8 +169,8 @@ end) = struct
   let remove k t =
     let rec rmv = function
       | Empty -> Empty
-      | Leaf (j,_) as t -> if X.id k == X.id j then Empty else t
-      | Branch (p,m,t0,t1) as t ->
+      | Leaf (_, j,_) as t -> if X.id k == X.id j then Empty else t
+      | Branch (_, p,m,t0,t1) as t ->
         if match_prefix (X.id k) p m then
           if zero_bit (X.id k) m then
             branch (p, m, rmv t0, t1)
@@ -182,55 +184,55 @@ end) = struct
   let rec cardinal = function
     | Empty -> 0
     | Leaf _ -> 1
-    | Branch (_,_,t0,t1) -> cardinal t0 + cardinal t1
+    | Branch (_, _,_,t0,t1) -> cardinal t0 + cardinal t1
 
   let rec iter f = function
     | Empty -> ()
-    | Leaf (k,x) -> f k x
-    | Branch (_,_,t0,t1) -> iter f t0; iter f t1
+    | Leaf (_, k,x) -> f k x
+    | Branch (_, _,_,t0,t1) -> iter f t0; iter f t1
 
   let rec fold f s accu = match s with
     | Empty -> accu
-    | Leaf (k,x) -> f k x accu
-    | Branch (_,_,t0,t1) -> fold f t0 (fold f t1 accu)
+    | Leaf (_, k,x) -> f k x accu
+    | Branch (_, _,_,t0,t1) -> fold f t0 (fold f t1 accu)
 
   let rec for_all p = function
     | Empty -> true
-    | Leaf (k, v)  -> p k v
-    | Branch (_,_,t0,t1) -> for_all p t0 && for_all p t1
+    | Leaf (_, k, v)  -> p k v
+    | Branch (_, _,_,t0,t1) -> for_all p t0 && for_all p t1
 
   let rec exists p = function
     | Empty -> false
-    | Leaf (k, v) -> p k v
-    | Branch (_,_,t0,t1) -> exists p t0 || exists p t1
+    | Leaf (_, k, v) -> p k v
+    | Branch (_, _,_,t0,t1) -> exists p t0 || exists p t1
 
   let rec filter pr = function
     | Empty -> Empty
-    | Leaf (k, v) as t -> if pr k v then t else Empty
-    | Branch (p,m,t0,t1) -> branch (p, m, filter pr t0, filter pr t1)
+    | Leaf (_, k, v) as t -> if pr k v then t else Empty
+    | Branch (_, p,m,t0,t1) -> branch (p, m, filter pr t0, filter pr t1)
 
   let rec filter_map pr = function
     | Empty -> Empty
-    | Leaf (k, v) -> (match pr k v with Some v' -> leaf (k, v') | None -> Empty)
-    | Branch (p,m,t0,t1) -> branch (p, m, filter_map pr t0, filter_map pr t1)
+    | Leaf (_, k, v) -> (match pr k v with Some v' -> leaf (k, v') | None -> Empty)
+    | Branch (_, p,m,t0,t1) -> branch (p, m, filter_map pr t0, filter_map pr t1)
 
   let partition p s =
     let rec part (t,f as acc) = function
       | Empty -> acc
-      | Leaf (k, v) -> if p k v then (add k v t, f) else (t, add k v f)
-      | Branch (_,_,t0,t1) -> part (part acc t0) t1
+      | Leaf (_, k, v) -> if p k v then (add k v t, f) else (t, add k v f)
+      | Branch (_, _,_,t0,t1) -> part (part acc t0) t1
     in
     part (Empty, Empty) s
 
   let rec choose = function
     | Empty -> raise Not_found
-    | Leaf (k, v) -> (k, v)
-    | Branch (_, _, t0, _) -> choose t0   (* we know that [t0] is non-empty *)
+    | Leaf (_, k, v) -> (k, v)
+    | Branch (_, _, _, t0, _) -> choose t0   (* we know that [t0] is non-empty *)
 
   let rec choose_opt = function
     | Empty -> None
-    | Leaf (k, v) -> Some (k, v)
-    | Branch (_, _, t0, _) -> choose_opt t0   (* we know that [t0] is non-empty *)
+    | Leaf (_, k, v) -> Some (k, v)
+    | Branch (_, _, _, t0, _) -> choose_opt t0   (* we know that [t0] is non-empty *)
 
   let split x m =
     let coll k v (l, b, r) =
@@ -242,16 +244,16 @@ end) = struct
 
   let rec min_binding = function
     | Empty -> raise Not_found
-    | Leaf (k, v) -> (k, v)
-    | Branch (_,_,s,t) ->
+    | Leaf (_, k, v) -> (k, v)
+    | Branch (_, _,_,s,t) ->
       let (ks, _) as bs = min_binding s in
       let (kt, _) as bt = min_binding t in
       if ks < kt then bs else bt
 
   let rec min_binding_opt = function
     | Empty -> None
-    | Leaf (k, v) -> Some (k, v)
-    | Branch (_,_,s,t) ->
+    | Leaf (_, k, v) -> Some (k, v)
+    | Branch (_, _,_,s,t) ->
       match (min_binding_opt s, min_binding_opt t) with
       | None, None -> None
       | None, bt -> bt
@@ -261,16 +263,16 @@ end) = struct
 
   let rec max_binding = function
     | Empty -> raise Not_found
-    | Leaf (k, v) -> (k, v)
-    | Branch (_,_,s,t) ->
+    | Leaf (_, k, v) -> (k, v)
+    | Branch (_, _,_,s,t) ->
       let (ks, _) as bs = max_binding s in
       let (kt, _) as bt = max_binding t in
       if ks > kt then bs else bt
 
   let rec max_binding_opt = function
     | Empty -> None
-    | Leaf (k, v) -> Some (k, v)
-    | Branch (_,_,s,t) ->
+    | Leaf (_, k, v) -> Some (k, v)
+    | Branch (_, _,_,s,t) ->
       match max_binding_opt s, max_binding_opt t with
       | None, None -> None
       | None, bt -> bt
@@ -287,12 +289,12 @@ end) = struct
       | Empty, Empty -> 0
       | Empty, _ -> -1
       | _, Empty -> 1
-      | Leaf (k1,x1), Leaf (k2,x2) ->
+      | Leaf (_, k1,x1), Leaf (_, k2,x2) ->
         let c = compare k1 k2 in
         if c <> 0 then c else cmp x1 x2
       | Leaf _, Branch _ -> -1
       | Branch _, Leaf _ -> 1
-      | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
+      | Branch (_, p1,m1,l1,r1), Branch (_, p2,m2,l2,r2) ->
         let c = compare p1 p2 in
         if c <> 0 then c else
           let c = compare m1 m2 in
@@ -322,11 +324,11 @@ end) = struct
   let rec union f = function
     | Empty, t  -> t
     | t, Empty  -> t
-    | Leaf (k,v1), t ->
+    | Leaf (_, k,v1), t ->
         update k (function None -> Some v1 | Some v2 -> f k v1 v2) t
-    | t, Leaf (k,v2) ->
+    | t, Leaf (_, k,v2) ->
         update k (function None -> Some v2 | Some v1 -> f k v1 v2) t
-    | (Branch (p,m,s0,s1) as s), (Branch (q,n,t0,t1) as t) ->
+    | (Branch (_, p,m,s0,s1) as s), (Branch (_, q,n,t0,t1) as t) ->
         if m == n && match_prefix q p m then
           (* The trees have the same prefix. Merge the subtrees. *)
           branch (p, m, union f (s0,t0), union f (s1,t1))
@@ -351,16 +353,16 @@ end) = struct
   let to_seq m =
     let rec prepend_seq m s = match m with
       | Empty -> s
-      | Leaf (k, v) -> fun () -> Seq.Cons((k,v), s)
-      | Branch (_, _, l, r) -> prepend_seq l (prepend_seq r s)
+      | Leaf (_, k, v) -> fun () -> Seq.Cons((k,v), s)
+      | Branch (_, _, _, l, r) -> prepend_seq l (prepend_seq r s)
     in
     prepend_seq m Seq.empty
 
   let to_seq_from k m =
     let rec prepend_seq m s = match m with
       | Empty -> s
-      | Leaf (key, v) -> if key >= k then fun () -> Seq.Cons((key,v), s) else s
-      | Branch (_, _, l, r) -> prepend_seq l (prepend_seq r s)
+      | Leaf (_, key, v) -> if key >= k then fun () -> Seq.Cons((key,v), s) else s
+      | Branch (_, _, _, l, r) -> prepend_seq l (prepend_seq r s)
     in
     prepend_seq m Seq.empty
 
@@ -369,5 +371,7 @@ end) = struct
 
   let of_seq s =
     Seq.fold_left (fun m (k, v) -> add k v m) empty s
+
+  let id = hash
 
 end
