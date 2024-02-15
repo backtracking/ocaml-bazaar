@@ -85,6 +85,14 @@
  (modules garsia_wachs))
 
 (library
+ (name hcpt)
+ (modules hcpt))
+(test
+ (name test_hcpt)
+ (modules test_hcpt)
+ (libraries hcpt))
+
+(library
  (name idd)
  (modules idd))
 (test
