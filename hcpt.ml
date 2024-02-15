@@ -45,7 +45,7 @@ end) = struct
     type t = pt
     let hash = function
       | Empty -> 0
-      | Leaf (k, _) -> X.id k
+      | Leaf (k, v) -> 31 * X.id k + X.hash v
       | Branch (p, _, t0, t1) -> 19 * (19 * p + hash t0) + hash t1
     let equal t0 t1 = match t0, t1 with
       | Empty, Empty -> true
