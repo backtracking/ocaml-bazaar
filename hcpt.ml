@@ -66,6 +66,7 @@ end) = struct
 
   let () = assert (Sys.word_size = 64)
 
+  (* Hacker's Delight 7.1 *)
   let bit_reversal32 x =
     let x = ((x land 0x55555555) lsl 1) lor ((x lsr 1) land 0x55555555) in
     let x = ((x land 0x33333333) lsl 2) lor ((x lsr 2) land 0x33333333) in
