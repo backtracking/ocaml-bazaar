@@ -41,8 +41,7 @@ end) = struct
     (==)
 
   module H = Ephemeron.K1.Make(struct
-    type pt = t
-    type t = pt
+    type nonrec t = t
     let hash = function
       | Empty -> 0
       | Leaf (_, k, v) -> 31 * X.id k + X.hash v
