@@ -202,6 +202,12 @@
  (name random_access_list)
  (modules random_access_list))
 
+(executable
+ (name re)
+ (promote (until-clean))
+ (modules re)
+ (libraries time))
+
 (library
  (name rope)
  (modules rope))
@@ -226,6 +232,11 @@
 (library
  (name skew_heap)
  (modules skew_heap))
+
+(executable
+ (name snake)
+ (promote (until-clean))
+ (modules snake))
 
 (executable
  (name soccer)
