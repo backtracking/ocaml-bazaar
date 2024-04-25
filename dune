@@ -245,6 +245,24 @@
  (libraries permutation))
 
 (library
+ (name sparse)
+ (modules sparse))
+(test
+ (name test_sparse)
+ (modules test_sparse)
+ (libraries arrays sparse))
+
+(executable
+ (name sudoku)
+ (promote (until-clean))
+ (modules sudoku))
+(executable
+ (name sudoku_sparse)
+ (promote (until-clean))
+ (modules sudoku_sparse)
+ (libraries sparse))
+
+(library
  (name suffix_tree)
  (modules suffix_tree))
 
