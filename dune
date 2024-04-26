@@ -255,11 +255,7 @@
 (executable
  (name sudoku)
  (promote (until-clean))
- (modules sudoku))
-(executable
- (name sudoku_sparse)
- (promote (until-clean))
- (modules sudoku_sparse)
+ (modules sudoku)
  (libraries sparse))
 
 (library

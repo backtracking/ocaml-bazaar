@@ -9,7 +9,7 @@
     But we can backtrack to any previous state (corresponding to a
     larger cardinal) in constant time!
 
-    See sudoku_sparse for an application.
+    See sudoku.ml for an application.
 *)
 
 type t
