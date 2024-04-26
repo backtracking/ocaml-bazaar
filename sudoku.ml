@@ -88,7 +88,40 @@ let solver1 s =
   done;
   print_endline "+---+---+---+"
 
-let solvers = [| solver0; solver1; |]
+(** And yet another, faster solver using sparse sets.
+
+  This time we maintain 27 sets: one for each row, column, and group.
+  Each contains the set of values still available.
+
+  Thanks to Andrei Paskevich for suggestion this. *)
+
+let solver2 s =
+  let grid = Array.make 81 0 in
+  let module S = Sparse in
+  let rw = Array.init 9 (fun i -> S.full 9) in
+  let cl = Array.init 9 (fun i -> S.full 9) in
+  let gr = Array.init 9 (fun i -> S.full 9) in
+  let init c v = grid.(c) <- v+1;
+                 S.remove rw.(row c) v; S.remove cl.(col c) v;
+                 S.remove gr.(group c) v in
+  String.iteri (fun j c ->
+    if c <> '0' then init j (Char.code c - Char.code '0' - 1)) s;
+  let rec solve c =
+    if c = 81 then raise Exit;
+    if grid.(c) <> 0 then solve (c+1) else
+    let sr = rw.(row c) and sc = cl.(col c) and sg = gr.(group c) in
+    let szr = S.size sr and szc = S.size sc and szg = S.size sg in
+    for v = 0 to 8 do
+      if S.mem sr v && S.mem sc v && S.mem sg v then (
+        init c v; solve (c+1);
+        S.backtrack sr szr; S.backtrack sc szc; S.backtrack sg szg
+      )
+    done;
+    grid.(c) <- 0 in
+  try solve 0; print_endline "pas de solution" with Exit ->
+  print grid
+
+let solvers = [| solver0; solver1; solver2; |]
 
 let () =
   let solver =
@@ -116,4 +149,5 @@ $ echo 2000000600000750300480901000003000003000100090000080000010205700807300000
 
    solver 0 : 44.6
    solver 1 : 14.2
+   solver 2 :  4.2
 *)
