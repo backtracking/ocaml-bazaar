@@ -101,9 +101,8 @@ let solver2 s =
   let rw = Array.init 9 (fun i -> S.full 9) in
   let cl = Array.init 9 (fun i -> S.full 9) in
   let gr = Array.init 9 (fun i -> S.full 9) in
-  let init c v = grid.(c) <- v+1;
-                 S.remove rw.(row c) v; S.remove cl.(col c) v;
-                 S.remove gr.(group c) v in
+  let init c v = grid.(c) <- v+1; S.remove rw.(row c) v;
+           S.remove cl.(col c) v; S.remove gr.(group c) v in
   String.iteri (fun j c ->
     if c <> '0' then init j (Char.code c - Char.code '0' - 1)) s;
   let rec solve c =
@@ -121,7 +120,42 @@ let solver2 s =
   try solve 0; print_endline "pas de solution" with Exit ->
   print grid
 
-let solvers = [| solver0; solver1; solver2; |]
+(** The same, but using bit vectors instead of sparse sets.
+   Not surprisingly, it is even faster. *)
+
+module BV = struct
+  let full n = (1 lsl n) - 1
+  let mem s i = s land (1 lsl i) <> 0
+  let rmv s i = s land (lnot (1 lsl i))
+end
+
+let solver3 s =
+  let grid = Array.make 81 0 in
+  let module S = Sparse in
+  let rw = Array.make 9 (BV.full 9) in
+  let cl = Array.make 9 (BV.full 9) in
+  let gr = Array.make 9 (BV.full 9) in
+  let remove a i v = a.(i) <- BV.rmv a.(i) v in
+  let init c v = grid.(c) <- v+1; remove rw (row c) v;
+             remove cl (col c) v; remove gr (group c) v in
+  String.iteri (fun j c ->
+    if c <> '0' then init j (Char.code c - Char.code '0' - 1)) s;
+  let rec solve c =
+    if c = 81 then raise Exit;
+    if grid.(c) <> 0 then solve (c+1) else
+    let rc = row c and cc = col c and gc = group c in
+    let sr = rw.(rc) and sc = cl.(cc) and sg = gr.(gc) in
+    for v = 0 to 8 do
+      if BV.mem sr v && BV.mem sc v && BV.mem sg v then (
+        init c v; solve (c+1);
+        rw.(rc) <- sr; cl.(cc) <- sc; gr.(gc) <- sg
+      )
+    done;
+    grid.(c) <- 0 in
+  try solve 0; print_endline "pas de solution" with Exit ->
+  print grid
+
+let solvers = [| solver0; solver1; solver2; solver3 |]
 
 let () =
   let solver =
@@ -150,4 +184,5 @@ $ echo 2000000600000750300480901000003000003000100090000080000010205700807300000
    solver 0 : 44.6
    solver 1 : 14.2
    solver 2 :  4.2
+   solver 3 :  0.7
 *)
