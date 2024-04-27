@@ -20,10 +20,12 @@ val inverse: permutation -> permutation
 (** runs in O(1) *)
 
 val compose: permutation -> permutation -> permutation
+(** [compose p q] returns a permutation that first applies [p] then
+    applies [q] *)
 
 val transposition: int -> int -> int -> permutation
 (** [transposition n i j] is the permutation of size [n] that swap [i]
-    and [j] *)
+    and [j]. Raises [Invalid_argument] if [0 <= i,j < n] does not hold. *)
 
 val apply: permutation -> int -> int
 (** [permutation p i] returns p(i) *)

@@ -10,3 +10,5 @@ doc:
 
 clean:
 	dune clean
+
+.PHONY: test
