@@ -1,7 +1,12 @@
 
-(** Permutations
+(** {1 Permutations}
 
-    In the following, [n] refers to the size of the permutation.
+    This module implements permutations of [{0,1,...,n-1}].  In the
+    following, [n] always refers to the size of the permutation.
+
+    Cycle notation: [(a1 a2 ... ak)] denotes a cycle of length [k]
+    mapping [a1] to [a2], [a2] to [a3], ..., and [ak] to [a1], for
+    distinct values [a1,a2,...,ak].
 *)
 
 type permutation
@@ -10,14 +15,14 @@ type permutation
     Polymorphic equality, comparison, and hashing functions can be applied to
     values of this type. *)
 
-type t = permutation
-
 val size: permutation -> int
+(** the size of a permutation *)
 
 val identity: int -> permutation
+(** the identity permutation *)
 
 val inverse: permutation -> permutation
-(** runs in O(1) *)
+(** the inverse of a permutation; runs in O(1). *)
 
 val compose: permutation -> permutation -> permutation
 (** [compose p q] returns a permutation that first applies [p] then
@@ -27,8 +32,27 @@ val transposition: int -> int -> int -> permutation
 (** [transposition n i j] is the permutation of size [n] that swap [i]
     and [j]. Raises [Invalid_argument] if [0 <= i,j < n] does not hold. *)
 
+val circular_right: int -> permutation
+(** [circular_right n] returns the permutation [(0 1 2 ... n-1)]
+    (cycle notation) *)
+
+val circular_left: int -> permutation
+(** [circular_left n] returns the permutation [(n-1 n-2 ... 1 0)]
+    (cycle notation) *)
+
+val random_circular: int -> permutation
+(** [random_circular n] returns a random permutation of size [n],
+    with a single cycle of length [n] *)
+
 val apply: permutation -> int -> int
-(** [permutation p i] returns p(i) *)
+(** [apply p i] returns p(i) *)
+
+val repeat: permutation -> int -> int -> int
+(** [repeat p k i] returns [p(p(...p(i)...))] ([k] times) *)
+
+val orbit: permutation -> int -> int list
+(** [orbit p i] returns the orbit of element [i], that is
+    the list [[i, p(i), p(p(i)), ...]] *)
 
 val to_array: permutation -> int array
 (** returns the permutation as an array *)
@@ -48,7 +72,10 @@ val next: permutation -> permutation
     Iterating [next] from [identity n] generates the [n!] permutations.
     Runs in time and space O(n). *)
 
-val all: int -> permutation list
+val seq_all: int -> permutation Seq.t
+(** all permutations in lexicographic order *)
+
+val list_all: int -> permutation list
 (** all permutations in lexicographic order.
     Beware that is is costly, namely time and space O(n * n!) *)
 
@@ -67,6 +94,9 @@ val permute_array_in_place: permutation -> 'a array -> unit
 (** same thing, but in place. Note: temporarily uses space O(n) *)
 
 val permute_list: permutation -> 'a list -> 'a list
+(** [permute_list p l] returns a new list, obtained by permuting [l]
+    using [p], that is, where element at position [i] in [l]
+    is moved to position [p(i)] in the result list *)
 
 val print: Format.formatter -> permutation -> unit
 (** one-line notation, that is, (p(0) p(1) ... p(n-1)) *)
@@ -75,22 +105,23 @@ module Cycles : sig
 
   type cycle = int list
 
-  type t = cycle list
+  type cycles = cycle list
 
-  val decompose: permutation -> t
-  (** decomposes a permutation into a product of cycles *)
+  val decompose: permutation -> cycles
+  (** Decomposes a permutation into a product of cycles.
+      Cycles of length 1 are included. *)
 
-  val recompose: t -> permutation
+  val recompose: cycles -> permutation
   (** Returns the permutation corresponding to a product of cycles.
       The list must include singleton cycles.
       Raises [Invalid_argument] if the argument is not a valid
       permutation. *)
 
-  val canonical: t -> t
+  val canonical: cycles -> cycles
   (** Within each cycle, put the smallest number first.
       Sorts cycles in decreasing order of the first number. *)
 
-  val print: Format.formatter -> t -> unit
+  val print: Format.formatter -> cycles -> unit
 
 end
 

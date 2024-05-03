@@ -40,7 +40,7 @@ let () =
     try loop (next p) with Not_found -> () in
   loop (identity 4);
   printf "---@.";
-  assert (List.length (all 4) = 24);
+  assert (List.length (list_all 4) = 24);
   let cl = [[3;1;6]; [5;4]; [2]; [0]] in
   printf "p = %a@." Cycles.print cl;
   printf "p = %a@." Cycles.print (Cycles.canonical cl);
@@ -57,6 +57,11 @@ let () =
   assert (apply r 1 = 0);
   assert (apply r 2 = 1)
 
-
+let () =
+  let p = circular_right 10 in
+  printf "p = %a@." print p;
+  for i = 0 to 9 do assert (repeat p 10 i = i) done;
+  let p = random_circular 10 in
+  printf "p = %a@." print p
 
 

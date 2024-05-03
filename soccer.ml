@@ -14,7 +14,7 @@ let inverse = function W -> L | L -> W | D -> D
 
 type outcome = result array
 
-let s4 = all 4
+let s4 = list_all 4
 let outcomes = Hashtbl.create 16
 let game = function
   | 0 -> 0, 1

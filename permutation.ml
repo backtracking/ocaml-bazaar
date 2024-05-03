@@ -6,13 +6,12 @@ type permutation = {
     ip: int array; (* the inverse permutation *)
 }
 
-type t = permutation
-
 let size p = p.size
 
 let identity n =
   if n < 0 then invalid_arg "identity";
-  { size = n; pi = Array.init n (fun i -> i); ip = Array.init n (fun i -> i) }
+  let a = Array.init n (fun i -> i) in
+  { size = n; pi = a; ip = a } (* sharing is fine *)
 
 let inverse p =
   { size = p.size; pi = p.ip; ip = p.pi }
@@ -21,7 +20,7 @@ let transposition n i j =
   if n < 0 || i < 0 || i >= n || j < 0 || j >= n then
     invalid_arg "transposition";
   let a = Array.init n (fun k -> if k = i then j else if k = j then i else k) in
-  { size = n; pi = a; ip = a }
+  { size = n; pi = a; ip = a } (* sharing is fine *)
 
 let compose p q =
   if p.size <> q.size then invalid_arg "compose";
@@ -29,17 +28,32 @@ let compose p q =
     pi = Array.init p.size (fun i -> q.pi.(p.pi.(i)));
     ip = Array.init p.size (fun i -> p.ip.(q.ip.(i))); }
 
+let circular_right n =
+  if n < 0 then invalid_arg "circular_right";
+  { size = n; pi = Array.init n (fun i -> if i = n-1 then 0 else i+1);
+              ip = Array.init n (fun i -> if i = 0 then n-1 else i-1) }
+
+let circular_left n =
+  if n < 0 then invalid_arg "circular_left";
+  inverse (circular_right n)
+
 let apply p i =
   if i < 0 || i >= p.size then invalid_arg "apply";
   p.pi.(i)
 
-let to_array p =
-  Array.copy p.pi
+let repeat p k i =
+  if i < 0 || i >= p.size || k < 0 then invalid_arg "repeat";
+  let rec repeat k i = if k = 0 then i else repeat (k-1) p.pi.(i) in
+  repeat k i
 
-let orbit p i =
-  if i < 0 || i >= p.size then invalid_arg "orbit";
-  let rec build o j = if j = i then List.rev o else build (j :: o) p.pi.(j) in
-  build [i] p.pi.(i)
+let orbit p start =
+  if start < 0 || start >= size p then invalid_arg "orbit";
+  let rec orbit acc i = (* in inverse order to avoid List.rev *)
+    if i = start then i :: acc else orbit (i :: acc) p.ip.(i) in
+  orbit [] p.ip.(start)
+
+let to_array p =
+  Array.copy p.pi (* do not leak the internal array! *)
 
 let of_array a =
   let n = Array.length a in
@@ -66,6 +80,16 @@ let random n =
     swap p.ip p.pi.(i) p.pi.(j)
   done;
   p
+
+let random_circular n =
+  if n < 0 then invalid_arg "random_circular";
+  let p = random n in
+  let pi = Array.make n 0 and ip = Array.make n 0 in
+  for i = 0 to n - 1 do
+    pi.(apply p i) <- apply p (if i = n-1 then 0 else i+1);
+    ip.(apply p i) <- apply p (if i = 0 then n-1 else i-1)
+  done;
+  { size = n; pi; ip }
 
 let permute_array p a =
   if p.size <> Array.length a then invalid_arg "permute_array";
@@ -113,15 +137,16 @@ let next p =
   loop i (n-1);
   p
 
-let all n =
-  if n < 0 then invalid_arg "all";
-  let rec build acc p =
-    let acc = p :: acc in
-    match next p with
-    | p -> build acc p
-    | exception Not_found -> List.rev acc
-  in
-  build [] (identity n)
+let seq_all n =
+  if n < 0 then invalid_arg "seq_all";
+  let rec iterate p () = match next p with
+    | n -> Seq.Cons (p, iterate n)
+    | exception Not_found -> Seq.Cons (p, Seq.empty) in
+  iterate (identity n)
+
+let list_all n =
+  if n < 0 then invalid_arg "list_all";
+  List.of_seq (seq_all n)
 
 open Format
 
@@ -151,7 +176,7 @@ module Cycles = struct
 
   type cycle = int list
 
-  type t = cycle list
+  type cycles = cycle list
 
   let decompose p =
     let n = p.size in
@@ -211,3 +236,10 @@ module Cycles = struct
     fprintf fmt "@[%a@]" print cl
 
 end
+
+(* TODO
+  - order (= lcm of cycle lengths)
+  - conjugate? (sigma o tau o sigma-1)
+  - bit-reversal permutation
+    https://en.wikipedia.org/wiki/Bit-reversal_permutation
+*)
