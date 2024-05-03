@@ -4,6 +4,7 @@
    In we have a group of 4 teams and we do all 6 games (e.g. Euro, World Cup),
    how many distinct configurations can we get?
 
+   The answer is 42 :-)
 *)
 
 open Permutation
