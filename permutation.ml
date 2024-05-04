@@ -46,11 +46,34 @@ let repeat p k i =
   let rec repeat k i = if k = 0 then i else repeat (k-1) p.pi.(i) in
   repeat k i
 
+let rec power p k = (* exponentiation by squaring *)
+  if k = 0 then identity p.size else
+  let p2 = compose p p in
+  let p' = power p2 (k / 2) in
+  if k mod 2 = 1 then compose p' p else p'
+
+let power p k =
+  if k < 0 then invalid_arg "power";
+  power p k
+
 let orbit p start =
   if start < 0 || start >= size p then invalid_arg "orbit";
   let rec orbit acc i = (* in inverse order to avoid List.rev *)
     if i = start then i :: acc else orbit (i :: acc) p.ip.(i) in
   orbit [] p.ip.(start)
+
+let rec gcd a b = let m = a mod b in if m = 0 then b else gcd b m
+let lcm a b = if a = 0 then b else if b = 0 then a else (a / gcd a b) * b
+
+let order p =
+  let n = p.size in
+  let rec loop ord i =
+    if i = n then ord else
+    let rec orbit len j =
+      if j = i then loop (lcm len ord) (i + 1) else
+      orbit (len + 1) p.pi.(j) in
+    orbit 1 p.pi.(i) in
+  loop 1 0
 
 let to_array p =
   Array.copy p.pi (* do not leak the internal array! *)
@@ -73,13 +96,14 @@ let swap a i j =
 (* Knuth's shuffle *)
 let random n =
   if n < 0 then invalid_arg "random";
-  let p = identity n in
+  let pi = Array.init n (fun i -> i) in
+  let ip = Array.init n (fun i -> i) in
   for i = 1 to n - 1 do
     let j = Random.int (i + 1) in
-    swap p.pi i j;
-    swap p.ip p.pi.(i) p.pi.(j)
+    swap pi i j;
+    swap ip pi.(i) pi.(j)
   done;
-  p
+  { size = n; pi; ip }
 
 let random_circular n =
   if n < 0 then invalid_arg "random_circular";
@@ -151,12 +175,12 @@ let list_all n =
 open Format
 
 let print fmt p =
-  fprintf fmt "@[(";
+  fprintf fmt "@[[";
   for i = 0 to p.size - 1 do
     fprintf fmt "%d" p.pi.(i);
-    if i < p.size - 1 then fprintf fmt "@ "
+    if i < p.size - 1 then fprintf fmt ",@ "
   done;
-  fprintf fmt ")@]"
+  fprintf fmt "]@]"
 
 let check p =
   let n = p.size in
@@ -238,8 +262,7 @@ module Cycles = struct
 end
 
 (* TODO
-  - order (= lcm of cycle lengths)
-  - conjugate? (sigma o tau o sigma-1)
   - bit-reversal permutation
     https://en.wikipedia.org/wiki/Bit-reversal_permutation
+  - conjugate? (sigma o tau o sigma-1)
 *)

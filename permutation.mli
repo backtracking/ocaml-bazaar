@@ -18,6 +18,8 @@ type permutation
 val size: permutation -> int
 (** the size of a permutation *)
 
+(** {2 Building permutations} *)
+
 val identity: int -> permutation
 (** the identity permutation *)
 
@@ -44,26 +46,15 @@ val random_circular: int -> permutation
 (** [random_circular n] returns a random permutation of size [n],
     with a single cycle of length [n] *)
 
-val apply: permutation -> int -> int
-(** [apply p i] returns p(i) *)
+val power: permutation -> int -> permutation
+(** [power p k] returns a permutation that iterates [k] times
+    the permutation [p], for a nonnegative integer [k] *)
 
-val repeat: permutation -> int -> int -> int
-(** [repeat p k i] returns [p(p(...p(i)...))] ([k] times) *)
+val random: int -> permutation
+(** [random n] returns a random permutation of size [n], with a uniform
+    distribution *)
 
-val orbit: permutation -> int -> int list
-(** [orbit p i] returns the orbit of element [i], that is
-    the list [[i, p(i), p(p(i)), ...]] *)
-
-val to_array: permutation -> int array
-(** returns the permutation as an array *)
-
-val count_inversions: permutation -> int
-(** [count_inversions p] returns the total number of inversions in [p],
-    that is the number of pairs (i,j) such that i<j and p(i)>p(j).
-    Runs in time O(n log n) and space O(n) *)
-
-val sign: permutation -> int
-(** returns -1 or 1 *)
+(** {2 All permutations} *)
 
 val next: permutation -> permutation
 (** [next p] is the permutation right after [p] in lexicographic order.
@@ -73,22 +64,56 @@ val next: permutation -> permutation
     Runs in time and space O(n). *)
 
 val seq_all: int -> permutation Seq.t
-(** all permutations in lexicographic order *)
+(** returns all permutations in lexicographic order *)
 
 val list_all: int -> permutation list
-(** all permutations in lexicographic order.
+(** returns all permutations in lexicographic order.
     Beware that is is costly, namely time and space O(n * n!) *)
 
-val random: int -> permutation
-(** [random n] returns a random permutation of size [n], with a uniform
-    distribution *)
+(** {2 Input/output} *)
 
 val of_array: int array -> permutation
-(** raises [Invalid_argument] is [a] is not a permutation of 0,...,n-1 *)
+(** [of_array a] returns a permutation corresponding to [a], that is such that
+    [p(i) = a.(i)] for all [i]. The array [a] is not modified and not borrowed.
+    Raises [Invalid_argument] is [a] is not a permutation of [0,...,n-1] *)
+
+val to_array: permutation -> int array
+(** returns the permutation as an array *)
+
+val print: Format.formatter -> permutation -> unit
+(** prints a permutation [p] in one-line notation,
+    that is, [[p(0), p(1), ..., p(n-1)]] *)
+
+(** {2 Properties of a permutation} *)
+
+val count_inversions: permutation -> int
+(** [count_inversions p] returns the total number of inversions in [p],
+    that is the number of pairs (i,j) such that i<j and p(i)>p(j).
+    Runs in time O(n log n) and space O(n) *)
+
+val sign: permutation -> int
+(** returns -1 or 1 *)
+
+val orbit: permutation -> int -> int list
+(** [orbit p i] returns the orbit of element [i], that is
+    the list [[i, p(i), p(p(i)), ...]] *)
+
+val order: permutation -> int
+(** [order p] returns the order of [p] in the symmetric group, that is
+    the smallest number [k>0] such that [power p k] is the identity
+    (this is the LCM of the length of the orbits) *)
+
+(** {2 Using a permutation} *)
+
+val apply: permutation -> int -> int
+(** [apply p i] returns p(i) *)
+
+val repeat: permutation -> int -> int -> int
+(** [repeat p k i] returns [p(p(...p(i)...))] ([k] times) *)
 
 val permute_array: permutation -> 'a array -> 'a array
 (** [permute_array p a] returns a new array, obtained by permuting [a]
-    using [p], that is, where element a.(i) is moved to position p(i) *)
+    using [p], that is, where element [a.(i)] is moved to position [p(i)] *)
 
 val permute_array_in_place: permutation -> 'a array -> unit
 (** same thing, but in place. Note: temporarily uses space O(n) *)
@@ -98,8 +123,7 @@ val permute_list: permutation -> 'a list -> 'a list
     using [p], that is, where element at position [i] in [l]
     is moved to position [p(i)] in the result list *)
 
-val print: Format.formatter -> permutation -> unit
-(** one-line notation, that is, (p(0) p(1) ... p(n-1)) *)
+(** {2 Decomposition into product of cycles} *)
 
 module Cycles : sig
 
@@ -122,6 +146,7 @@ module Cycles : sig
       Sorts cycles in decreasing order of the first number. *)
 
   val print: Format.formatter -> cycles -> unit
+  (** Prints cycles, e.g. [(3 4 6)(1)(0 7 5 2)] *)
 
 end
 

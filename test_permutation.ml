@@ -64,4 +64,21 @@ let () =
   let p = random_circular 10 in
   printf "p = %a@." print p
 
+let rec gcd a b = let m = a mod b in if m = 0 then b else gcd b m
+let lcm a b = if a = 0 then b else if b = 0 then a else (a / gcd a b) * b
 
+let test n =
+  let p = random n in
+  printf "p = %a@." print p;
+  let o = order p in
+  printf "  order = %d@." o;
+  assert (o > 0);
+  assert (power p o = identity n);
+  assert (o = 1 || power p (o-1) <> identity n);
+  let cl = Cycles.decompose p in
+  printf "  = %a@." Cycles.print cl;
+  assert (o = List.fold_left lcm 1 (List.map List.length cl))
+
+let () =
+  printf "---@.";
+  for n = 1 to 20 do test n done
