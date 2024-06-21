@@ -77,8 +77,30 @@ let test n =
   assert (o = 1 || power p (o-1) <> identity n);
   let cl = Cycles.decompose p in
   printf "  = %a@." Cycles.print cl;
-  assert (o = List.fold_left lcm 1 (List.map List.length cl))
+  assert (o = List.fold_left lcm 1 (List.map List.length cl));
+  let tl = transpositions p in
+  printf "  = @[%a@]@."
+    (pp_print_list (fun fmt (i,j) -> fprintf fmt "(%d,%d)" i j)) tl;
+  let f (i,j) p = compose (transposition n i j) p in
+  assert (p = List.fold_right f tl (identity n))
 
 let () =
   printf "---@.";
   for n = 1 to 20 do test n done
+
+let success f x = try ignore (f x) with _ -> assert false
+let failure f x = try ignore (f x); assert false with _ -> ()
+
+let () =
+  List.iter (success of_array)
+    [ [||];
+      [|0|];
+      [|1;0|];
+      [|2;1;0|];
+    ];
+  List.iter (failure of_array)
+    [ [|1|];
+      [|-1|];
+      [|0;0|];
+      [|0;1;3|];
+    ]

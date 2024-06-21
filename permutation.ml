@@ -16,17 +16,17 @@ let identity n =
 let inverse p =
   { size = p.size; pi = p.ip; ip = p.pi }
 
-let transposition n i j =
-  if n < 0 || i < 0 || i >= n || j < 0 || j >= n then
-    invalid_arg "transposition";
-  let a = Array.init n (fun k -> if k = i then j else if k = j then i else k) in
-  { size = n; pi = a; ip = a } (* sharing is fine *)
-
 let compose p q =
   if p.size <> q.size then invalid_arg "compose";
   { size = p.size;
     pi = Array.init p.size (fun i -> q.pi.(p.pi.(i)));
     ip = Array.init p.size (fun i -> p.ip.(q.ip.(i))); }
+
+let transposition n i j =
+  if n < 0 || i < 0 || i >= n || j < 0 || j >= n then
+    invalid_arg "transposition";
+  let a = Array.init n (fun k -> if k = i then j else if k = j then i else k) in
+  { size = n; pi = a; ip = a } (* sharing is fine *)
 
 let circular_right n =
   if n < 0 then invalid_arg "circular_right";
@@ -36,15 +36,6 @@ let circular_right n =
 let circular_left n =
   if n < 0 then invalid_arg "circular_left";
   inverse (circular_right n)
-
-let apply p i =
-  if i < 0 || i >= p.size then invalid_arg "apply";
-  p.pi.(i)
-
-let repeat p k i =
-  if i < 0 || i >= p.size || k < 0 then invalid_arg "repeat";
-  let rec repeat k i = if k = 0 then i else repeat (k-1) p.pi.(i) in
-  repeat k i
 
 let rec power p k = (* exponentiation by squaring *)
   if k = 0 then identity p.size else
@@ -56,54 +47,36 @@ let power p k =
   if k < 0 then invalid_arg "power";
   power p k
 
-let orbit p start =
-  if start < 0 || start >= size p then invalid_arg "orbit";
-  let rec orbit acc i = (* in inverse order to avoid List.rev *)
-    if i = start then i :: acc else orbit (i :: acc) p.ip.(i) in
-  orbit [] p.ip.(start)
-
-let rec gcd a b = let m = a mod b in if m = 0 then b else gcd b m
-let lcm a b = if a = 0 then b else if b = 0 then a else (a / gcd a b) * b
-
-let order p =
-  let n = p.size in
-  let rec loop ord i =
-    if i = n then ord else
-    let rec orbit len j =
-      if j = i then loop (lcm len ord) (i + 1) else
-      orbit (len + 1) p.pi.(j) in
-    orbit 1 p.pi.(i) in
-  loop 1 0
-
-let to_array p =
-  Array.copy p.pi (* do not leak the internal array! *)
-
-let of_array a =
-  let n = Array.length a in
-  let ip = Array.make n (-1) in
-  for i = 0 to n - 1 do
-    let j = a.(i) in
-    if j < 0 || j >= n || ip.(j) <> -1 then invalid_arg "of_array";
-    ip.(j) <- i
-  done;
-  { size = n; pi = Array.copy a; ip }
-
 let swap a i j =
   assert (0 <= i && i < Array.length a);
   assert (0 <= j && j < Array.length a);
   let tmp = a.(i) in a.(i) <- a.(j); a.(j) <- tmp
 
-(* Knuth's shuffle *)
 let random n =
   if n < 0 then invalid_arg "random";
   let pi = Array.init n (fun i -> i) in
   let ip = Array.init n (fun i -> i) in
-  for i = 1 to n - 1 do
+  for i = 1 to n - 1 do (* Knuth's shuffle *)
     let j = Random.int (i + 1) in
     swap pi i j;
     swap ip pi.(i) pi.(j)
   done;
   { size = n; pi; ip }
+
+let apply p i =
+  if i < 0 || i >= p.size then invalid_arg "apply";
+  p.pi.(i)
+
+let repeat p k i =
+  if i < 0 || i >= p.size || k < 0 then invalid_arg "repeat";
+  let rec repeat k i = if k = 0 then i else repeat (k-1) p.pi.(i) in
+  repeat k i
+
+let orbit p start =
+  if start < 0 || start >= size p then invalid_arg "orbit";
+  let rec orbit acc i = (* in inverse order to avoid List.rev *)
+    if i = start then i :: acc else orbit (i :: acc) p.ip.(i) in
+  orbit [] p.ip.(start)
 
 let random_circular n =
   if n < 0 then invalid_arg "random_circular";
@@ -114,36 +87,6 @@ let random_circular n =
     ip.(apply p i) <- apply p (if i = 0 then n-1 else i-1)
   done;
   { size = n; pi; ip }
-
-let permute_array p a =
-  if p.size <> Array.length a then invalid_arg "permute_array";
-  Array.init p.size (fun i -> a.(p.ip.(i)))
-
-(* FIXME: is there a better way to do it?
-   like inverting a permutation in place? *)
-let permute_array_in_place p a =
-  if p.size <> Array.length a then invalid_arg "permute_array_in_place";
-  let a' = permute_array p a in
-  Array.blit a' 0 a 0 p.size
-
-let permute_list p l =
-  let a = permute_array p (Array.of_list l) in
-  Array.to_list a
-
-let count_inversions p =
-  let n = p.size in
-  let f = Fenwick.create n in
-  let inv = ref 0 in
-  for i = 0 to n - 1 do
-    let x = p.pi.(i) in
-    inv := !inv + Fenwick.between f (x+1) n;
-    Fenwick.add f ~delta:1 x
-  done;
-  !inv
-
-let sign p =
-  let c = count_inversions p in
-  if c mod 2 = 0 then 1 else -1
 
 (* next permutation in lexicographic order *)
 let next p =
@@ -172,15 +115,79 @@ let list_all n =
   if n < 0 then invalid_arg "list_all";
   List.of_seq (seq_all n)
 
-open Format
+let to_array p =
+  Array.copy p.pi (* do not leak the internal array! *)
+
+let of_array a =
+  let n = Array.length a in
+  let ip = Array.make n (-1) in
+  for i = 0 to n - 1 do
+    let j = a.(i) in
+    if j < 0 || j >= n || ip.(j) <> -1 then invalid_arg "of_array";
+    ip.(j) <- i
+  done;
+  { size = n; pi = Array.copy a; ip }
 
 let print fmt p =
-  fprintf fmt "@[[";
+  Format.fprintf fmt "@[[";
   for i = 0 to p.size - 1 do
-    fprintf fmt "%d" p.pi.(i);
-    if i < p.size - 1 then fprintf fmt ",@ "
+    Format.fprintf fmt "%d" p.pi.(i);
+    if i < p.size - 1 then Format.fprintf fmt ",@ "
   done;
-  fprintf fmt "]@]"
+  Format.fprintf fmt "]@]"
+
+let count_inversions p =
+  let n = p.size in
+  let f = Fenwick.create n in
+  let inv = ref 0 in
+  for i = 0 to n - 1 do
+    let x = p.pi.(i) in
+    inv := !inv + Fenwick.between f (x+1) n;
+    Fenwick.add f ~delta:1 x
+  done;
+  !inv
+
+let sign p =
+  let c = count_inversions p in
+  if c mod 2 = 0 then 1 else -1
+
+let rec gcd a b = let m = a mod b in if m = 0 then b else gcd b m
+let lcm a b = if a = 0 then b else if b = 0 then a else (a / gcd a b) * b
+
+let order p =
+  let n = p.size in
+  let rec loop ord i =
+    if i = n then ord else
+    let rec orbit len j =
+      if j = i then loop (lcm len ord) (i + 1) else
+      orbit (len + 1) p.pi.(j) in
+    orbit 1 p.pi.(i) in
+  loop 1 0
+
+let transpositions p =
+  let n = p.size in
+  let rec decompose acc p i =
+    if i = n then List.rev acc else
+    let j = p.pi.(i) in
+    if j = i then decompose acc p (i + 1) else
+    let t = transposition n i j in
+    decompose ((i, j) :: acc) (compose t p) 0 in
+  decompose [] p 0
+
+let permute_array p a =
+  if p.size <> Array.length a then invalid_arg "permute_array";
+  Array.init p.size (fun i -> a.(p.ip.(i)))
+
+(* FIXME: is there a better way to do it?
+   like inverting a permutation in place? *)
+let permute_array_in_place p a =
+  if p.size <> Array.length a then invalid_arg "permute_array_in_place";
+  let a' = permute_array p a in
+  Array.blit a' 0 a 0 p.size
+
+let permute_list p l =
+  let a = permute_array p (Array.of_list l) in
+  Array.to_list a
 
 let check p =
   let n = p.size in
@@ -248,16 +255,16 @@ module Cycles = struct
 
   let rec print_list fmt = function
     | [] -> ()
-    | [x] -> fprintf fmt "%d" x
-    | x :: c -> fprintf fmt "%d@ %a" x print_list c
+    | [x] -> Format.fprintf fmt "%d" x
+    | x :: c -> Format.fprintf fmt "%d@ %a" x print_list c
 
   let rec print fmt = function
     | [] -> ()
-    | [c] -> fprintf fmt "(%a)" print_list c
-    | c :: cl -> printf "(%a)@,%a" print_list c print cl
+    | [c] -> Format.fprintf fmt "(%a)" print_list c
+    | c :: cl -> Format.printf "(%a)@,%a" print_list c print cl
 
   let print fmt cl =
-    fprintf fmt "@[%a@]" print cl
+    Format.fprintf fmt "@[%a@]" print cl
 
 end
 

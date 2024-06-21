@@ -103,6 +103,8 @@ val order: permutation -> int
     the smallest number [k>0] such that [power p k] is the identity
     (this is the LCM of the length of the orbits) *)
 
+val transpositions: permutation -> (int * int) list
+
 (** {2 Using a permutation} *)
 
 val apply: permutation -> int -> int

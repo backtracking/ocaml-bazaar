@@ -118,6 +118,14 @@
  (modules latticemult))
 
 (library
+ (name LCA)
+ (modules LCA))
+(test
+ (name test_lca)
+ (modules test_lca)
+ (libraries LCA))
+
+(library
  (name leftistheap)
  (modules leftistheap))
 
