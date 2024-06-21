@@ -119,7 +119,8 @@
 
 (library
  (name LCA)
- (modules LCA))
+ (modules LCA)
+ (libraries RMQ))
 (test
  (name test_lca)
  (modules test_lca)
@@ -215,6 +216,14 @@
  (promote (until-clean))
  (modules re)
  (libraries time))
+
+(library
+ (name RMQ)
+ (modules RMQ))
+(test
+ (name test_rmq)
+ (modules test_rmq)
+ (libraries RMQ))
 
 (library
  (name rope)

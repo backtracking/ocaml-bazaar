@@ -36,9 +36,15 @@ module Make(T: TREE) = struct
     let hash = T.hash
   end)
 
+  module E = struct
+    type t = int * T.node
+    let compare (d1,_) (d2,_) = Int.compare d1 d2
+  end
+  module R = RMQ.Make0(E)
+
   type t = {
     index: int H.t;
-    depth: (int * T.node) array;
+      rmq: R.t;
   }
 
   let rec size t =
@@ -55,18 +61,13 @@ module Make(T: TREE) = struct
       let child i c = let i = fill i (d+1, c) in add i p in
       List.fold_left child i (T.subtrees t) in
     assert (fill 0 (0, root) = 2*n-1);
-    { index; depth }
-
-  let naive_rmq a i j =
-    if not (0 <= i && i < j && j <= Array.length a) then
-      invalid_arg "naive_rmq";
-    let rec find m k = if k = j then m else find (min m a.(k)) (k + 1) in
-    find a.(i) (i + 1)
+    let rmq = R.create depth in
+    { index; rmq }
 
   let lca t x y =
     let find n = try H.find t.index n with Not_found -> invalid_arg "lca" in
     let ix = find x and iy = find y in
-    let _, n = naive_rmq t.depth (min ix iy) (max ix iy + 1) in
+    let _, (_, n) = R.rmq t.rmq ~lo:(min ix iy) ~hi:(max ix iy + 1) in
     n
 
 end
