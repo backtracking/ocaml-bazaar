@@ -67,7 +67,7 @@ module Make(T: TREE) = struct
   let lca t x y =
     let find n = try H.find t.index n with Not_found -> invalid_arg "lca" in
     let ix = find x and iy = find y in
-    let _, (_, n) = R.rmq t.rmq ~lo:(min ix iy) ~hi:(max ix iy + 1) in
+    let _, n = R.rmq t.rmq ~lo:(min ix iy) ~hi:(max ix iy + 1) in
     n
 
 end
