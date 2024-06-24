@@ -33,11 +33,14 @@ module type RMQ = sig
 end
 
 module Make0(E: OrderedType) : RMQ with type elt = E.t
-(** Naive implementation with no pre-processing at all.
+(** Straightforward implementation with no pre-processing at all.
     Pre-processing: O(1)
     Request: time O(hi - lo). *)
 
 module Make1(E: OrderedType) : RMQ with type elt = E.t
-(** Block-based implementation.
-    Pre-processing: time and space O(sqrt(n))
+(** Pre-processing: time and space O(sqrt(n))
     Request: time O(sqrt(n)). *)
+
+module Make2(E: OrderedType) : RMQ with type elt = E.t
+(** Pre-processing: time and space O(n log n)
+    Request: time O(1). *)
