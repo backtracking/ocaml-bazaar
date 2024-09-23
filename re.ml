@@ -1,4 +1,11 @@
 
+(* Several ways to match a regular expression against a string.
+
+   The point here is not performance, but rather exploring
+   elementary/elegant ways of doing it.
+
+*)
+
 type re =
   | Empty
   | Epsilon
@@ -10,7 +17,12 @@ type re =
 type accepter = re -> string -> bool
 
 let accepters = Queue.create ()
-let declare name accept = Queue.add (name, accept) accepters
+let tobench = Queue.create ()
+let declare ?(bench=true) name accept =
+  Queue.add (name, accept) accepters;
+  if bench then Queue.add (name, accept) tobench
+
+(* CPS-style *)
 
 let accept1 r s =
   let n = String.length s in
@@ -24,7 +36,7 @@ let accept1 r s =
   in
   a r 0 (fun j -> j = n )
 
-let () = declare "accept1" accept1
+let () = declare "cps1" accept1
 
 let accept2 r s =
   let n = String.length s in
@@ -46,7 +58,7 @@ let accept2 r s =
   in
   a r 0 (fun j -> j = n )
 
-let () = declare "accept2" accept2
+let () = declare "cps2" accept2
 
 let accept3 r s =
   let n = String.length s in
@@ -61,7 +73,7 @@ let accept3 r s =
   in
   a r true 0 (fun j -> j = n )
 
-let () = declare "accept3" accept3
+let () = declare "cps3" accept3
 
 let accept4 r w =
   let n = String.length w in
@@ -79,7 +91,57 @@ let accept4 r w =
           a r1 i (fun j h -> if i < j then a r j k h else h ()) o) in
    a r 0 (fun i h -> i = n || h ()) (fun () -> false)
 
-let () = declare "accept4" accept4
+let () = declare "double-barrel-cps" accept4
+
+(** Other, less efficient solutions *)
+
+(* straightforward backtracking *)
+
+let accept0 r s =
+  let n = String.length s in
+  let rec exists i j p = i <= j && (p i || exists (i+1) j p) in
+  let rec a i j r = (* r matches s[i..j[ *) match r with
+    | Empty -> false
+    | Epsilon -> i = j
+    | Char c -> i = j-1 && s.[i] = c
+    | Alt (r1, r2) -> a i j r1 || a i j r2
+    | Concat (r1, r2) -> exists i j (fun k -> a i k r1 && a k j r2)
+    | Star r1 as r -> i = j || exists (i+1) j (fun k -> a i k r1 && a k j r)
+  in
+  a 0 (String.length s) r
+
+let () = declare ~bench:false "backtracking" accept0
+
+(* Brzozowski derivative *)
+
+(* Is the empty word part of the language? *)
+let rec null = function
+  | Empty | Char _ -> false
+  | Epsilon | Star _ -> true
+  | Alt (r1, r2) -> null r1 || null r2
+  | Concat (r1, r2) -> null r1 && null r2
+
+(* Brzozowski derivative:
+   returns a regexp r1 such that L(r1) = { w | cw in L(r) } *)
+let rec derivative r c = match r with
+  | Empty | Epsilon ->
+      Empty
+  | Char d ->
+      if c = d then Epsilon else Empty
+  | Alt (r1, r2) ->
+      Alt (derivative r1 c, derivative r2 c)
+  | Concat (r1, r2) ->
+      let r' = Concat (derivative r1 c, r2) in
+      if null r1 then Alt (r', derivative r2 c) else r'
+  | Star r1 ->
+      Concat (derivative r1 c, r)
+
+let brzozowski r w =
+  let n = String.length w in
+  let rec a r i = if i = n then null r else a (derivative r w.[i]) (i + 1) in
+  a r 0
+
+let () = declare ~bench:false "brzozowski-derivative" brzozowski
 
 (* various regexp for a* *)
 let a = Char 'a' and b = Char 'b'
@@ -93,6 +155,8 @@ let ra = [ Star a;
            Star (Concat (Epsilon, a));
            Star (Concat (a, Epsilon));
          ]
+
+(* Sanity checks *)
 
 let test (name, accept) =
   Format.printf "testing %s...@?" name;
@@ -112,13 +176,17 @@ let test (name, accept) =
 
 let () = Queue.iter test accepters
 
-let bench (name, accept) =
-  let good = String.make 1_000_000 'a' in
-  let bad = String.make 20 'a' ^ "#" in
-  let f () =
-    List.iter (fun r -> assert (accept r good)) ra;
-    List.iter (fun r -> assert (not (accept r bad))) ra;
-  in
+(* Benchmarks *)
+
+let bench str ok (name, accept) =
+  let f () = List.iter (fun r -> assert (accept r str = ok)) ra in
   Time.print_time ~msg:name f ()
 
-let () = Queue.iter bench accepters
+let () =
+  Format.printf "-- good --@.";
+  let good = String.make 1_000_000 'a' in
+  Queue.iter (bench good true) tobench;
+  Format.printf "-- bad --@.";
+  let bad = String.make 25 'a' ^ "#" in
+  Queue.iter (bench bad false) tobench;
+  ()
