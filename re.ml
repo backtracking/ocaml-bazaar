@@ -22,6 +22,19 @@ let declare ?(bench=true) name accept =
   Queue.add (name, accept) accepters;
   if bench then Queue.add (name, accept) tobench
 
+let direct r w =
+  let n = String.length w in
+  let rec a r i k = match r with
+    | Empty -> false
+    | Epsilon -> k i
+    | Char c -> i < n && w.[i] = c && k (i + 1)
+    | Alt (r1, r2) -> a r1 i k || a r2 i k
+    | Concat (r1, r2) -> a r1 i (fun j -> a r2 j k)
+    | Star r1 -> k i || a r1 i (fun j -> i < j && a r j k) in
+  a r 0 (fun i -> i = n)
+
+let () = declare "direct" direct
+
 (* CPS-style *)
 
 let accept1 r s =
@@ -84,7 +97,7 @@ let accept4 r w =
         if i < n && w.[i] = c then k (i + 1) o else o ()
     | Alt (r1, r2) ->
         a r1 i k (fun () -> a r2 i k o)
-    | Concat (r1,r2) ->
+    | Concat (r1, r2) ->
         a r1 i (fun j h -> a r2 j k h) o
     | Star r1 ->
         k i (fun () ->
@@ -92,6 +105,19 @@ let accept4 r w =
    a r 0 (fun i h -> i = n || h ()) (fun () -> false)
 
 let () = declare "double-barrel-cps" accept4
+
+let uncps r w =
+  let n = String.length w in
+  let rec a r i k = match r with
+    | Empty -> ()
+    | Epsilon -> k i
+    | Char c -> if i < n && w.[i] = c then k (i + 1)
+    | Alt (r1, r2) -> a r1 i k; a r2 i k
+    | Concat (r1, r2) -> a r1 i (fun j -> a r2 j k)
+    | Star r1 -> k i; a r1 i (fun j -> if i < j then a r j k) in
+  try a r 0 (fun i -> if i = n then raise Exit); false with Exit -> true
+
+let () = declare "uncps" uncps
 
 (** Other, less efficient solutions *)
 
@@ -121,6 +147,14 @@ let rec null = function
   | Alt (r1, r2) -> null r1 || null r2
   | Concat (r1, r2) -> null r1 && null r2
 
+let concat = function
+  | Empty, _ | _, Empty -> Empty
+  | Epsilon, r | r, Epsilon -> r
+  | r1, r2 -> Concat (r1, r2)
+let alt = function
+  | Empty, r | r, Empty -> r
+  | r1, r2 -> Alt (r1, r2)
+
 (* Brzozowski derivative:
    returns a regexp r1 such that L(r1) = { w | cw in L(r) } *)
 let rec derivative r c = match r with
@@ -129,12 +163,12 @@ let rec derivative r c = match r with
   | Char d ->
       if c = d then Epsilon else Empty
   | Alt (r1, r2) ->
-      Alt (derivative r1 c, derivative r2 c)
+      alt (derivative r1 c, derivative r2 c)
   | Concat (r1, r2) ->
-      let r' = Concat (derivative r1 c, r2) in
-      if null r1 then Alt (r', derivative r2 c) else r'
+      let r' = concat (derivative r1 c, r2) in
+      if null r1 then alt (r', derivative r2 c) else r'
   | Star r1 ->
-      Concat (derivative r1 c, r)
+      concat (derivative r1 c, r)
 
 let brzozowski r w =
   let n = String.length w in
@@ -143,7 +177,7 @@ let brzozowski r w =
 
 let () = declare ~bench:false "brzozowski-derivative" brzozowski
 
-(* various regexp for a* *)
+(* various regexps for a* *)
 let a = Char 'a' and b = Char 'b'
 let ra = [ Star a;
            Star (Star a);
@@ -151,7 +185,7 @@ let ra = [ Star a;
            Star (Alt (a, Epsilon));
            Star (Alt (Empty, a));
            Star (Alt (a, Empty));
-           Alt (Star b, Star a);
+           Alt (Concat (Star a, Empty), Star a);
            Star (Concat (Epsilon, a));
            Star (Concat (a, Epsilon));
          ]
