@@ -121,7 +121,7 @@ let () = declare "uncps" uncps
 
 (** Other, less efficient solutions *)
 
-(* straightforward backtracking *)
+(* brute force *)
 
 let accept0 r s =
   let n = String.length s in
@@ -136,7 +136,7 @@ let accept0 r s =
   in
   a 0 (String.length s) r
 
-let () = declare ~bench:false "backtracking" accept0
+let () = declare ~bench:false "brute force" accept0
 
 (* Brzozowski derivative *)
 

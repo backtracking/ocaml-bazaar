@@ -285,6 +285,12 @@
  (libraries unix))
 
 (executable
+ (name test_queue)
+ (modules test_queue)
+ (promote (until-clean))
+ (libraries time))
+
+(executable
  (name tetris)
  (flags ())
  (promote (until-clean))
