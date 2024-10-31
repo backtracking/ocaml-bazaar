@@ -44,6 +44,10 @@ module type S = sig
   val clear: elt -> t -> t
     (** removes all occurrences of an element *)
 
+  val inclusion: t -> t -> bool
+    (** [inclusion ms1 ms2] tests whether the multiset [ms1] is
+        included is the multiset [ms2] *)
+
   val iter: (elt -> int -> unit) -> t -> unit
     (** Iterates over all the elements of the universe, in ascending order.
         For each element, it applies the given function on the element
@@ -68,9 +72,5 @@ end
 module Make(X: UNIVERSE) : sig
   val create: (X.t * int) list -> (module S with type elt = X.t)
     (** Returns a multiset implementation for a given universe. *)
-end
-
-module Chars: sig
-  val create: (char * int) list -> (module S with type elt = char)
 end
 

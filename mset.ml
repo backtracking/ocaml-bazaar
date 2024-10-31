@@ -8,6 +8,7 @@ module type S = sig
   val add: elt -> t -> t
   val remove: elt -> t -> t
   val clear: elt -> t -> t
+  val inclusion: t -> t -> bool
   val iter: (elt -> int -> unit) -> t -> unit
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
 end
@@ -84,6 +85,10 @@ module Make(X: UNIVERSE) = struct
       let iter f ms =
         List.iter (fun (x, _) -> f x (occ x ms)) universe
 
+      let inclusion ms1 ms2 =
+        let check (x, _) = occ x ms1 <= occ x ms2 in
+        List.for_all check universe
+
       let print pp fmt ms =
         let open Format in
         fprintf fmt "@[<hov 2>{ ";
@@ -98,5 +103,3 @@ module Make(X: UNIVERSE) = struct
     (module M : S with type elt = X.t)
 
 end
-
-module Chars = Make(Char)

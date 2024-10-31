@@ -1,5 +1,5 @@
 
-open Mset.Chars
+include Mset.Make(Char)
 
 let [@inline always] would_fail f x =
   try ignore (f x); assert false with _ -> ()
@@ -34,6 +34,8 @@ let test xl =
     else addx (n+1, add x ms) (x, c-1) in
   let n, ms = List.fold_left addx (0,empty) xl in
   assert (size ms = n);
+  assert (inclusion empty ms);
+  assert (inclusion ms ms);
   Format.printf "ms = %a@." (print Format.pp_print_char) ms;
   List.iter (fun (x, c) -> assert (occ x ms = c)) xl;
   let rec removex (n, ms as acc) (x, c) =
