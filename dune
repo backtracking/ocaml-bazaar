@@ -138,6 +138,14 @@
  (modules test_matrix)
  (libraries matrix))
 
+(library
+ (name mset)
+ (modules mset))
+(test
+ (name test_mset)
+ (modules test_mset)
+ (libraries mset))
+
 (executable
  (name nerdle)
  (flags ())
