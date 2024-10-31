@@ -18,7 +18,8 @@
 
     The universe (i.e. the elements that can be stored in the multiset
     and, for each, its maximal multiplicity) has to be provided
-    upfront.
+    upfront. Functions over multisets fail if they are given elements
+    not belonging to the universe, or if the capacity is exceeded.
 *)
 
 module type S = sig
@@ -30,23 +31,30 @@ module type S = sig
     (** the empty multiset *)
 
   val size: t -> int
-    (** returns the size i.e. the sum of all multiplicities *)
+    (** returns the size of the multiset i.e. the sum of all multiplicities *)
 
   val occ: elt -> t -> int
-    (** returns the mutiplicity *)
+    (** returns the mutiplicity of an element (and 0 if the element
+        does not belong to the multiset) *)
 
   val add: elt -> t -> t
-    (** adds one occurrence of an element *)
+    (** adds one occurrence of an element (and fails with
+        [Invalid_argument] if the capacity for that element is
+        exceeded) *)
 
   val remove: elt -> t -> t
-    (** removes one occurrence of an element *)
+    (** removes one occurrence of an element (and does nothing if the
+        element does not belong to the multiset) *)
 
   val clear: elt -> t -> t
-    (** removes all occurrences of an element *)
+    (** removes all occurrences of a given element (and does nothing
+        if the element does not belong to the multiset) *)
 
   val inclusion: t -> t -> bool
     (** [inclusion ms1 ms2] tests whether the multiset [ms1] is
-        included is the multiset [ms2] *)
+        included is the multiset [ms2] i.e. for any element from the
+        universe, its multiplicity in [ms1] is no larger than its
+        multiplicity in [ms2]. *)
 
   val iter: (elt -> int -> unit) -> t -> unit
     (** Iterates over all the elements of the universe, in ascending order.
@@ -71,6 +79,8 @@ end
 
 module Make(X: UNIVERSE) : sig
   val create: (X.t * int) list -> (module S with type elt = X.t)
-    (** Returns a multiset implementation for a given universe. *)
+    (** Returns a multiset implementation for a given universe.
+        Raises [Invalid_argument] if the total capacity is too large to
+        fit inside the bits of a single integer. *)
 end
 

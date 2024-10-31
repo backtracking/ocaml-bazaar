@@ -20,6 +20,34 @@ module type UNIVERSE = sig
   val compare: t -> t -> int
 end
 
+(* Principle:
+
+   Each element, in order, is mapped to a position `ofs` in the bitmap
+   (starting from 0) and a number of bits `k` large enough to fit its
+   maximal multiplicity. For instance, the universe
+
+      a:2, b:12, c:1
+
+   is mapped as follows
+
+          offset  #bits
+      a        0      2
+      b        2      4
+      c        6      1
+
+   that is
+
+       61          6 5 4 3 2 1 0
+      +--- ... ---+-+-------+---+
+      |  unused   |c|   b   | a |
+      +--- ... ---+-+-------+---+
+
+   Note: The bit sign (bit 62) is never used, to avoid the corner case
+   where the universe would be a single element with a multiplicity
+   requiring 63 bits.
+
+*)
+
 module Make(X: UNIVERSE) = struct
 
   (* number of bits to represent 0..n-1 i.e. smallest k>=0 such that 2^k>n *)
@@ -33,7 +61,9 @@ module Make(X: UNIVERSE) = struct
     let cmp (x1,_) (x2,_) = X.compare x1 x2 in
     let universe = List.sort cmp xl in
     let module H = Hashtbl.Make(X) in
-    let slot = H.create 64 in (* elt -> offset in the bitmap *)
+    (* table `slot` maps each elt to a triple (offset, capacity, mask)
+       where `mask = 2^k-1` with `k` the number of bits *)
+    let slot = H.create 64 in
     let assign = let ofs = ref 0 in fun (x, cap) ->
       if H.mem slot x then invalid_arg "create: duplicate element";
       let k = ceillog2 cap in
