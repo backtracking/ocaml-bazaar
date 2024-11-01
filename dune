@@ -2,6 +2,11 @@
  (dev
   (flags (:standard -w -27-26-32))))
 
+(executable
+  (name anagrams)
+  (modules anagrams)
+  (libraries mset))
+
 (library
  (name arrays)
  (modules arrays))

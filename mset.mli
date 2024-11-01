@@ -23,12 +23,17 @@
 *)
 
 module type S = sig
-  type t
-
   type elt
+
+  type t
+    (** The type of multisets. Immutable.  Polymorphic equality,
+        comparison, and hashing can be used on this type. *)
 
   val empty: t
     (** the empty multiset *)
+
+  val full: t
+    (** the full multiset, where each element has its maximal multiplicity *)
 
   val size: t -> int
     (** returns the size of the multiset i.e. the sum of all multiplicities *)
@@ -50,6 +55,10 @@ module type S = sig
     (** removes all occurrences of a given element (and does nothing
         if the element does not belong to the multiset) *)
 
+  val min_elt: t -> elt
+    (** returns a minimal element, if any, and raises [Invalid_argument]
+        if the multiset is empty *)
+
   val inclusion: t -> t -> bool
     (** [inclusion ms1 ms2] tests whether the multiset [ms1] is
         included is the multiset [ms2] i.e. for any element from the
@@ -61,6 +70,13 @@ module type S = sig
         For each element, it applies the given function on the element
         and its multiplicity. This iteration includes elements for which
         the multiplicity is zero. *)
+
+  val compare: t -> t -> int
+    (** Lexicographic comparison of multisets.
+
+        Note: The polymorphic function [Stdlib.compare] can also be
+        used on type [t]. It is a total order, but not the
+        lexicographic one. *)
 
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
     (** Prints a multiset in the following format:

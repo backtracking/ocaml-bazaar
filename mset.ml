@@ -3,13 +3,16 @@ module type S = sig
   type t
   type elt
   val empty: t
+  val full: t
   val size: t -> int
   val occ: elt -> t -> int
   val add: elt -> t -> t
   val remove: elt -> t -> t
   val clear: elt -> t -> t
+  val min_elt: t -> elt
   val inclusion: t -> t -> bool
   val iter: (elt -> int -> unit) -> t -> unit
+  val compare: t -> t -> int
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
 end
 
@@ -37,24 +40,18 @@ end
 
    that is
 
-       61          6 5 4 3 2 1 0
+       62          6 5 4 3 2 1 0
       +--- ... ---+-+-------+---+
       |  unused   |c|   b   | a |
       +--- ... ---+-+-------+---+
-
-   Note: The bit sign (bit 62) is never used, to avoid the corner case
-   where the universe would be a single element with a multiplicity
-   requiring 63 bits.
 
 *)
 
 module Make(X: UNIVERSE) = struct
 
   (* number of bits to represent 0..n-1 i.e. smallest k>=0 such that 2^k>n *)
-  let max_cap = 1 lsl (Sys.int_size - 1) - 1
   let ceillog2 n =
     if n < 0 then invalid_arg "create: capacity must be nonnegative";
-    if n > max_cap then invalid_arg "create: capacity exceeded";
     let rec find k = if n <= 1 lsl k - 1 then k else find (k + 1) in find 1
 
   let create xl =
@@ -69,7 +66,7 @@ module Make(X: UNIVERSE) = struct
       let k = ceillog2 cap in
       H.add slot x (!ofs, cap, (1 lsl k) - 1);
       ofs := !ofs + k;
-      if !ofs > Sys.int_size - 1 then invalid_arg "create: capacity exceeded";
+      if !ofs > Sys.int_size then invalid_arg "create: capacity exceeded";
       in
     List.iter assign universe;
     let [@inline always] get map ofs m =
@@ -84,6 +81,12 @@ module Make(X: UNIVERSE) = struct
       type t = { size: int; map: int }
 
       let empty = { size = 0; map = 0 }
+
+      let full =
+        let add (x, _) ms =
+          let ofs, c, m = H.find slot x in
+          { size = ms.size + c; map = (ms.map lor c) lsl ofs } in
+        List.fold_right add universe empty
 
       let size ms = ms.size
 
@@ -112,12 +115,31 @@ module Make(X: UNIVERSE) = struct
         let v = get ms.map ofs m in
         { size = ms.size - v; map = ms.map land (lnot (m lsl ofs)) }
 
+      (* TODO: could be improved by first looking for the least significant
+         1-bit and then find x with a binary search or a lookup table *)
+      let min_elt ms =
+        let rec find = function
+          | [] -> invalid_arg "min_elt: empty set"
+          | (x, _) :: xl ->
+              let ofs, _, m = H.find slot x in
+              let v = get ms.map ofs m in
+              if v > 0 then x else find xl in
+        find universe
+
       let iter f ms =
         List.iter (fun (x, _) -> f x (occ x ms)) universe
 
       let inclusion ms1 ms2 =
         let check (x, _) = occ x ms1 <= occ x ms2 in
         List.for_all check universe
+
+      let compare ms1 ms2 =
+        let rec compare = function
+          | [] -> 0
+          | (x, _) :: xl ->
+              let c = Stdlib.compare (occ x ms1) (occ x ms2) in
+              if c <> 0 then c else compare xl in
+        compare universe
 
       let print pp fmt ms =
         let open Format in
