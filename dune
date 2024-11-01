@@ -5,6 +5,7 @@
 (executable
   (name anagrams)
   (modules anagrams)
+  (promote (until-clean))
   (libraries mset))
 
 (library
