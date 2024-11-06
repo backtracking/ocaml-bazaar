@@ -100,3 +100,7 @@ module Make(X: UNIVERSE) : sig
         fit inside the bits of a single integer. *)
 end
 
+(** Multisets of uppercase letters (without accents), according to the
+    frequencies of letters in French and English. *)
+module FR: S with type elt = char
+module EN: S with type elt = char

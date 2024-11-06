@@ -47,12 +47,12 @@ end
 
 *)
 
-module Make(X: UNIVERSE) = struct
+(* number of bits to represent 0..n-1 i.e. smallest k>=0 such that 2^k>n *)
+let ceillog2 n =
+  if n < 0 then invalid_arg "create: capacity must be nonnegative";
+  let rec find k = if n <= 1 lsl k - 1 then k else find (k + 1) in find 1
 
-  (* number of bits to represent 0..n-1 i.e. smallest k>=0 such that 2^k>n *)
-  let ceillog2 n =
-    if n < 0 then invalid_arg "create: capacity must be nonnegative";
-    let rec find k = if n <= 1 lsl k - 1 then k else find (k + 1) in find 1
+module Make(X: UNIVERSE) = struct
 
   let create xl =
     let cmp (x1,_) (x2,_) = X.compare x1 x2 in
@@ -154,4 +154,76 @@ module Make(X: UNIVERSE) = struct
     end in
     (module M : S with type elt = X.t)
 
+end
+
+(* Source:
+   https://fr.wikipedia.org/wiki/Fr%C3%A9quence_d%27apparition_des_lettres *)
+
+let from_frequencies fl =
+  let approx (c, f) =
+    let k = max 1 (int_of_float (ceil (float Sys.int_size *. f /. 130.))) in
+    c, 1 lsl k - 1 in
+  List.map approx fl
+
+module FR = struct
+  let u = from_frequencies [
+    'E', 14.715 +. 1.504 +. 0.271 +. 0.218 +. 0.008;
+    'S', 7.948;
+    'A', 7.636 +. 0.486 +. 0.051;
+    'I', 7.529 +. 0.005 +. 0.045;
+    'T', 7.244;
+    'N', 7.095;
+    'R', 6.693;
+    'U', 6.311 +. 0.060 +. 0.058;
+    'O', 5.796 +. 0.023;
+    'L', 5.456;
+    'D', 3.669;
+    'C', 3.260 +. 0.085;
+    'M', 2.968;
+    'P', 2.521;
+    'V', 1.838;
+    'Q', 1.362;
+    'F', 1.066;
+    'B', 0.901;
+    'G', 0.866;
+    'H', 0.737;
+    'J', 0.613;
+    'X', 0.427;
+    'Z', 0.326;
+    'Y', 0.128;
+    'K', 0.074;
+    'W', 0.049; ]
+  module M = Make(Char)
+  include (val M.create u)
+end
+module EN = struct
+  let u = from_frequencies [
+    'E', 12.702;
+    'S', 6.327;
+    'A', 8.167;
+    'I', 6.966;
+    'T', 9.056;
+    'N', 6.749;
+    'R', 5.987;
+    'U', 2.758;
+    'O', 7.507;
+    'L', 4.025;
+    'D', 4.253;
+    'C', 2.782;
+    'M', 2.406;
+    'P', 1.929;
+    'V', 0.978;
+    'Q', 0.095;
+    'F', 2.228;
+    'B', 1.492;
+    'G', 2.015;
+    'H', 6.094;
+    'J', 0.153;
+    'X', 0.150;
+    'Z', 0.074;
+    'Y', 1.974;
+    'K', 0.772;
+    'W', 2.360; ]
+  module M = Make(Char)
+  include (val M.create u)
 end

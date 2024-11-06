@@ -6,7 +6,7 @@
   (name anagrams)
   (modules anagrams)
   (promote (until-clean))
-  (libraries mset))
+  (libraries trie mset))
 
 (library
  (name arrays)
