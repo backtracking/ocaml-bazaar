@@ -5,8 +5,10 @@ module type S = sig
   val empty: t
   val full: t
   val size: t -> int
+  val is_empty: t -> bool
   val occ: elt -> t -> int
-  val add: elt -> t -> t
+  val add1: elt -> t -> t
+  val add: elt -> int -> t -> t
   val remove: elt -> t -> t
   val clear: elt -> t -> t
   val min_elt: t -> elt
@@ -83,12 +85,14 @@ module Make(X: UNIVERSE) = struct
       let empty = { size = 0; map = 0 }
 
       let full =
-        let add (x, _) ms =
-          let ofs, c, m = H.find slot x in
-          { size = ms.size + c; map = (ms.map lor c) lsl ofs } in
-        List.fold_right add universe empty
+        let add ms (x, _) =
+          let ofs, c, _ = H.find slot x in
+          { size = ms.size + c; map = ms.map lor (c lsl ofs) } in
+        List.fold_left add empty universe
 
       let size ms = ms.size
+
+      let is_empty ms = ms.size = 0
 
       let unknown x = not (H.mem slot x)
 
@@ -96,11 +100,18 @@ module Make(X: UNIVERSE) = struct
         if unknown x then invalid_arg "occ: unknown element";
         let ofs, _, m = H.find slot x in get ms.map ofs m
 
-      let add x ms =
-        if unknown x then invalid_arg "add: unknown element";
+      let add1 x ms =
+        if unknown x then invalid_arg "add1: unknown element";
         let ofs, cap, m = H.find slot x in
         let v = 1 + (ms.map lsr ofs) land m in
-        if v > cap then invalid_arg "add: capacity exceeded";
+        if v > cap then invalid_arg "add1: capacity exceeded";
+        { size = ms.size + 1; map = set ms.map ofs m v }
+
+      let add x n ms =
+        if unknown x then invalid_arg "add: unknown element";
+        let ofs, cap, m = H.find slot x in
+        let v = n + (ms.map lsr ofs) land m in
+        if v < 0 || v > cap then invalid_arg "add: capacity exceeded";
         { size = ms.size + 1; map = set ms.map ofs m v }
 
       let remove x ms =
@@ -141,9 +152,21 @@ module Make(X: UNIVERSE) = struct
               if c <> 0 then c else compare xl in
         compare universe
 
+      let rec print_binary fmt = function
+        | 0 -> Format.fprintf fmt "0"
+        | 1 -> Format.fprintf fmt "1"
+        | n -> Format.fprintf fmt "%a%d" print_binary (n/2) (n mod 2)
+
+      let debug = false
+
       let print pp fmt ms =
         let open Format in
-        fprintf fmt "@[<hov 2>{ ";
+        fprintf fmt "@[<hov 2>";
+        if debug then (
+          fprintf fmt "%a " print_binary ms.map;
+          H.iter (fun c (ofs,_,_) -> fprintf fmt "%a:%d " pp c ofs) slot;
+        );
+        fprintf fmt "{ ";
         let first = ref true in
         let print x n =
           if !first then first := false else fprintf fmt ";@ ";

@@ -38,14 +38,22 @@ module type S = sig
   val size: t -> int
     (** returns the size of the multiset i.e. the sum of all multiplicities *)
 
+  val is_empty: t -> bool
+    (** returns true if and only if the multiset is empty; this is equivalent
+        to checking that the [size] is zero. *)
+
   val occ: elt -> t -> int
     (** returns the mutiplicity of an element (and 0 if the element
         does not belong to the multiset) *)
 
-  val add: elt -> t -> t
+  val add1: elt -> t -> t
     (** adds one occurrence of an element (and fails with
         [Invalid_argument] if the capacity for that element is
         exceeded) *)
+
+  val add: elt -> int -> t -> t
+    (** [add x n ms] adds [n] occurrences (or subtract if [n] is negative)
+        of element [x] in multiset [ms] *)
 
   val remove: elt -> t -> t
     (** removes one occurrence of an element (and does nothing if the
@@ -102,5 +110,6 @@ end
 
 (** Multisets of uppercase letters (without accents), according to the
     frequencies of letters in French and English. *)
+
 module FR: S with type elt = char
 module EN: S with type elt = char
