@@ -14,7 +14,7 @@
     This module implements a persistent data structure for multisets
     using bitmaps.  Each multiset is internally represented by a
     single integer, provided the total number of bits needed does not
-    exceed [Sys.int_size - 1].
+    exceed [Sys.int_size].
 
     The universe (i.e. the elements that can be stored in the multiset
     and, for each, its maximal multiplicity) has to be provided
@@ -52,8 +52,8 @@ module type S = sig
         exceeded) *)
 
   val add: elt -> int -> t -> t
-    (** [add x n ms] adds [n] occurrences (or subtract if [n] is negative)
-        of element [x] in multiset [ms] *)
+    (** [add x n ms] adds [n] occurrences of element [x] to the
+        multiset [ms] (or subtract from it if [n] is negative) *)
 
   val remove: elt -> t -> t
     (** removes one occurrence of an element (and does nothing if the
@@ -73,9 +73,16 @@ module type S = sig
         universe, its multiplicity in [ms1] is no larger than its
         multiplicity in [ms2]. *)
 
+  val diff: t -> t -> t
+    (** [diff ms2 ms1] compute the difference of the multiset [ms2]
+        and the multiset [ms1] i.e. for any element from the universe,
+        the difference from its multiplicity in [ms2] and its
+        multiplicity in [ms1]. Raises [Invalid_argument] if [ms1] is
+        not included in [ms2]. *)
+
   val iter: (elt -> int -> unit) -> t -> unit
     (** Iterates over all the elements of the universe, in ascending order.
-        For each element, it applies the given function on the element
+        For each element, it applies the given function to the element
         and its multiplicity. This iteration includes elements for which
         the multiplicity is zero. *)
 
@@ -90,6 +97,13 @@ module type S = sig
     (** Prints a multiset in the following format:
         {[
         { a:3; b:0; c:1 }
+        ]}
+        Elements appear in ascending order. *)
+
+  val print_nat: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
+    (** Prints a multiset in the following format:
+        {[
+        { a,a,a,c }
         ]}
         Elements appear in ascending order. *)
 end

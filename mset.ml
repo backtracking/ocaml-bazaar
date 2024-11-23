@@ -13,9 +13,11 @@ module type S = sig
   val clear: elt -> t -> t
   val min_elt: t -> elt
   val inclusion: t -> t -> bool
+  val diff: t -> t -> t
   val iter: (elt -> int -> unit) -> t -> unit
   val compare: t -> t -> int
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
+  val print_nat: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
 end
 
 module type UNIVERSE = sig
@@ -56,7 +58,7 @@ let ceillog2 n =
 
 module Make(X: UNIVERSE) = struct
 
-  let create xl =
+  let create (xl: (X.t * int) list) =
     let cmp (x1,_) (x2,_) = X.compare x1 x2 in
     let universe = List.sort cmp xl in
     let module H = Hashtbl.Make(X) in
@@ -112,7 +114,7 @@ module Make(X: UNIVERSE) = struct
         let ofs, cap, m = H.find slot x in
         let v = n + (ms.map lsr ofs) land m in
         if v < 0 || v > cap then invalid_arg "add: capacity exceeded";
-        { size = ms.size + 1; map = set ms.map ofs m v }
+        { size = ms.size + n; map = set ms.map ofs m v }
 
       let remove x ms =
         if unknown x then invalid_arg "remove: unknown element";
@@ -144,6 +146,13 @@ module Make(X: UNIVERSE) = struct
         let check (x, _) = occ x ms1 <= occ x ms2 in
         List.for_all check universe
 
+      let diff ms2 ms1 =
+        let add acc (x, _) =
+          let n1 = occ x ms1 and n2 = occ x ms2 in
+          if n1 > n2 then invalid_arg "diff";
+          add x (n2 - n1) acc in
+        List.fold_left add empty universe
+
       let compare ms1 ms2 =
         let rec compare = function
           | [] -> 0
@@ -171,6 +180,18 @@ module Make(X: UNIVERSE) = struct
         let print x n =
           if !first then first := false else fprintf fmt ";@ ";
           fprintf fmt "%a:%d" pp x n in
+        iter print ms;
+        fprintf fmt " }@]"
+
+      let print_nat pp fmt ms =
+        let open Format in
+        fprintf fmt "@[<hov 2>";
+        fprintf fmt "{ ";
+        let first = ref true in
+        let print1 x =
+          if !first then first := false else fprintf fmt ",@,";
+          fprintf fmt "%a" pp x in
+        let print x n = for _ = 1 to n do print1 x done in
         iter print ms;
         fprintf fmt " }@]"
 

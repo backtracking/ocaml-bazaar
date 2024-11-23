@@ -32,7 +32,16 @@ let () =
   assert (min_elt ms = 'b');
   let ms = clear 'b' ms in
   assert (min_elt ms = 'c');
+  assert (size ms = 1);
+  let ms = clear 'c' ms in
   must_fail min_elt ms;
+  let ms = add 'a' 3 ms in
+  assert (size ms = 3);
+  must_fail (add 'a' 1) ms;
+  let ms = add 'b' 1 ms in
+  assert (size ms = 4);
+  let ms = add 'c' 2 ms in
+  assert (size ms = 6);
   ()
 
 let test xl =

@@ -8,6 +8,8 @@ module MS = struct
   type t = (char, int) H.t
   let create () =
     H.create 16
+  let size ms =
+    H.fold (fun _ n c -> n + c) ms 0
   let mult ms c =
     try H.find ms c with Not_found -> 0
   let elements ms =
@@ -43,7 +45,12 @@ module MS = struct
     fprintf fmt " }@]"
 end
 
+(* dictionary = multiset -> lists of words *)
 module Hms = Hashtbl.Make(MS)
+type words = int * string list
+type dictionary = words Hms.t
+
+let cons w (n, wl) = (n+1, w :: wl)
 
 let dictfile = ref ""
 let capitalize = ref false
@@ -60,8 +67,7 @@ let () =
   Arg.parse speclist anon_fun usage_msg;
   if !dictfile = "" then Arg.usage speclist usage_msg
 
-(* multiset -> lists of words *)
-let dict : string list Hms.t =
+let dict : dictionary =
   let dict = Hms.create 65536 in
   let nwords = ref 0 in
   let nclasses = ref 0 in
@@ -70,8 +76,8 @@ let dict : string list Hms.t =
     let s = String.uppercase_ascii s in
     let ms = MS.of_string s in
     Hms.replace dict ms
-      (s :: try Hms.find dict ms
-            with Not_found -> incr nclasses; []) in
+      (cons s (try Hms.find dict ms
+               with Not_found -> incr nclasses; (0, []))) in
   In_channel.with_open_text !dictfile (In_channel.fold_lines add ());
   printf "%d words@." !nwords;
   printf "%d classes@." !nclasses;
@@ -83,25 +89,17 @@ let print_list =
 let () =
   let largest = ref 0 in
   let hist = H.create 16 in
-  let print_class wl =
-    printf "@[<hov 2>%a (%d)@]@." print_list wl (List.length wl) in
-  let print ms wl =
+  let print_class (n, wl) =
+    printf "  @[<hov 2>%a (%d)@]@." print_list wl n in
+  let print ms (n, wl as c) =
     let n = List.length wl in
     if n > !largest then largest := n;
     H.replace hist n (1 + try H.find hist n with Not_found -> 0);
-    if n > 5 then print_class wl in
+    if n > 7 then print_class c in
   Hms.iter print dict;
   for n = 1 to !largest do
-    printf "classes of size %d: %d@." n (H.find hist n)
+    printf "  classes of size %d: %d@." n (H.find hist n)
   done
-
-(*
-let trdict =
-  let add ms wl tr =
-    let cl = List.map fst (MS.elements ms) in
-    T.add cl (ms, wl) tr in
-  Hms.fold add dict T.empty
-*)
 
 module CharMset = Mset.Make(Char)
 module type MSET = Mset.S with type elt = char
@@ -115,32 +113,80 @@ module AD(MS: MSET) = struct
 
   type ad = {
     ms: mset;
-    br: ad M.t;
+    br: (words * ad) M.t;
   }
 
   let bot = { ms = MS.empty; br = M.empty }
 
   let ms_of_hms hms =
     H.fold MS.add hms MS.empty
+  let print_ms =
+    MS.print_nat pp_print_char
 
   let build dict ms0 =
-    printf "building the diagram...@.";
-    let memo = H.create (1 lsl (min 16 (MS.size ms0))) in
+    printf "  building the diagram...@.";
+    let add hms w d = M.add (ms_of_hms hms) w d in
+    let dict = Hms.fold add dict M.empty in
+    let memo = H.create (1 lsl (min 16 (max 22 (MS.size ms0)))) in
+    H.add memo MS.empty (Some bot);
+    let nodes = ref 1 in
     let rec build ms =
+      (* printf "build ms=%a@." print_ms ms; *)
       try H.find memo ms
       with Not_found -> let ad = compute ms in H.add memo ms ad; ad
     and compute ms =
-      if MS.is_empty ms then bot else
-      { ms; br = M.empty }
+      (* printf "compute ms=%a@." print_ms ms; *)
+      let add ms' w br =
+        if MS.inclusion ms' ms then (
+          (* printf "  subset ms' = %a@." print_ms ms'; *)
+          (* printf "    diff = %a@." print_ms (MS.diff ms ms'); *)
+          match build (MS.diff ms ms') with
+          | Some ad -> M.add ms' (w, ad) br
+          | None -> br
+        ) else br
+      in
+      let br = M.fold add dict M.empty in
+      if M.is_empty br then None else (incr nodes; Some { ms; br })
     in
-    let ad = build ms0 in
-    printf "  %d nodes@." (H.length memo);
-    ad
+    match build ms0 with
+    | Some ad ->
+        printf "    %d nodes@." !nodes;
+        ad
+    | None ->
+        printf "    no tree!@."; raise Not_found
+
+  let print fmt ad =
+    let visited = H.create 16 in
+    let rec print { ms; br } =
+      if H.mem visited ms then () else dump ms br
+    and dump ms br =
+      H.add visited ms ();
+      fprintf fmt "@[<v>node %a:@\n" print_ms ms;
+      let branch ms' ((n, wl), {ms;_}) =
+        fprintf fmt "  @[<hov 2>%a => %a@]@\n" print_ms ms' print_ms ms in
+      M.iter branch br;
+      fprintf fmt "@]";
+      M.iter (fun _ (_, ad) -> print ad) br
+    in
+    print ad
+
+  let count ad =
+    let memo = H.create 16 in (* min, ms => count *)
+    let rec count min ad =
+      let key = min, ad.ms in
+      try H.find memo key
+      with Not_found ->
+        let n = if MS.is_empty ad.ms then 1 else
+          let add ms ((n,_), ad) acc =
+            if MS.compare min ms <= 0 then acc + n * count ms ad else acc in
+          M.fold add ad.br 0 in
+        H.add memo key n; n in
+    count MS.empty ad
 
 end
 
 let () =
-  while true do
+  try while true do
     printf "letters: @?";
     let s = read_line () in
     let letters = MS.create () in
@@ -148,30 +194,44 @@ let () =
       | 'A'..'Z' as c -> MS.add letters c
       | _ -> () in
     String.iter add s;
-    printf "%a@." MS.print letters;
+    printf "%a (size %d)@." MS.print letters (MS.size letters);
     let dict0 = Hms.create 16 in
     let add ms wl = if MS.subset ms letters then Hms.add dict0 ms wl in
     Hms.iter add dict;
+    printf "  %d multisets@." (Hms.length dict0);
+    printf "  pruned dictionary:@.";
+    let print ms (n, wl) =
+      printf "    @[<hov 2>%a => %d (%a)@]@." MS.print ms n print_list wl in
+    Hms.iter print dict0;
     (* 1-word anagrams *)
-    if Hms.mem dict letters then
-      printf "@[=> @[%a@]@." print_list (Hms.find dict letters);
-    (* 2-words anagrams *)
-    let find ms1 wl1 =
+    if Hms.mem dict letters then (
+      let n, wl = Hms.find dict letters in
+      printf "  1-word anagrams:@.    @[<hov 2>%a (%d words)@]@."
+        print_list wl n
+    );
+    (* 2-word anagrams *)
+    printf "  2-word anagrams:@.";
+    let find ms1 (_,wl1) =
       if MS.subset ms1 letters then (
         let ms2 = MS.diff letters ms1 in
         if MS.hash ms1 <= MS.hash ms2 && Hms.mem dict ms2 then
-          printf "@[<hov 2>[%a] x [%a]@]@." print_list wl1
-            print_list (Hms.find dict ms2)
+          printf "    @[<hov 2>[%a] x [%a]@]@." print_list wl1
+            print_list (snd (Hms.find dict ms2))
     ) in
     Hms.iter find dict;
     (* anagram diagram *)
     let u = MS.elements letters in
-    List.iter (fun (c, n) -> printf "%C/%d@." c n) u;
     let module Ms = (val CharMset.create u) in
     let module Ad = AD(Ms) in
     let ms = Ms.full in
-    printf "ms = %a@." (Ms.print pp_print_char) ms;
-    let ad = Ad.build dict0 ms in
-    ()
-  done
+    printf "  ms = %a@." (Ms.print pp_print_char) ms;
+    try
+      let ad = Ad.build dict0 ms in
+      printf "    %a@." Ad.print ad;
+      printf "    count = %d@." (Ad.count ad);
+      ()
+    with Not_found ->
+      ()
+  done with End_of_file -> ()
+
 
