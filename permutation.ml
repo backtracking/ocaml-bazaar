@@ -203,6 +203,18 @@ let check p =
     assert (p.pi.(k) = i)
   done
 
+type t = permutation
+
+let equal p q =
+  p.size = q.size && p.pi = q.pi
+
+let compare p q =
+  let c = Stdlib.compare p.size q.size in
+  if c <> 0 then c else Stdlib.compare p.pi q.pi
+
+let hash p =
+  Hashtbl.hash p.pi
+
 module Cycles = struct
 
   type cycle = int list

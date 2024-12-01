@@ -12,8 +12,10 @@
 type permutation
 (** The type of permutation.
     This is an immutable data structure.
-    Polymorphic equality, comparison, and hashing functions can be applied to
-    values of this type. *)
+
+    Polymorphic equality, comparison, and hashing functions can safely
+    be applied to values of this type, but functions [equal], [compare],
+    and [hash] below are slightly more efficient. *)
 
 val size: permutation -> int
 (** the size of a permutation *)
@@ -124,6 +126,12 @@ val permute_list: permutation -> 'a list -> 'a list
 (** [permute_list p l] returns a new list, obtained by permuting [l]
     using [p], that is, where element at position [i] in [l]
     is moved to position [p(i)] in the result list *)
+
+type t = permutation
+
+val equal: t -> t -> bool
+val compare: t -> t -> int
+val hash: t -> int
 
 (** {2 Decomposition into product of cycles} *)
 
