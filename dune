@@ -1,6 +1,6 @@
 (env
  (dev
-  (flags (:standard -w -27-26-32))))
+  (flags (:standard -w -9-27-26-32))))
 
 (executable
   (name anagrams)
@@ -292,6 +292,14 @@
 (library
  (name suffix_tree)
  (modules suffix_tree))
+
+(library
+ (name tbt)
+ (modules tbt))
+(test
+ (name test_tbt)
+ (modules test_tbt)
+ (libraries tbt))
 
 (library
  (name time)
