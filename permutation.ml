@@ -156,11 +156,13 @@ let lcm a b = if a = 0 then b else if b = 0 then a else (a / gcd a b) * b
 
 let order p =
   let n = p.size in
+  let seen = Array.make n false in
   let rec loop ord i =
     if i = n then ord else
+    if seen.(i) then loop ord (i + 1) else
     let rec orbit len j =
-      if j = i then loop (lcm len ord) (i + 1) else
-      orbit (len + 1) p.pi.(j) in
+      seen.(j) <- true;
+      if j = i then loop (lcm len ord) (i + 1) else orbit (len + 1) p.pi.(j) in
     orbit 1 p.pi.(i) in
   loop 1 0
 

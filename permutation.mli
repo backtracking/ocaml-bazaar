@@ -94,7 +94,8 @@ val count_inversions: permutation -> int
     Runs in time O(n log n) and space O(n) *)
 
 val sign: permutation -> int
-(** returns -1 or 1 *)
+(** returns -1 or 1.
+    Note: uses [count_inversions] and thus runs in O(n log n) *)
 
 val orbit: permutation -> int -> int list
 (** [orbit p i] returns the orbit of element [i], that is
@@ -103,7 +104,7 @@ val orbit: permutation -> int -> int list
 val order: permutation -> int
 (** [order p] returns the order of [p] in the symmetric group, that is
     the smallest number [k>0] such that [power p k] is the identity
-    (this is the LCM of the length of the orbits) *)
+    (this is the LCM of the lengths of the orbits) *)
 
 val transpositions: permutation -> (int * int) list
 
