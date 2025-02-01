@@ -324,8 +324,21 @@
  (modules trie))
 
 (executable
+ (name word5)
+ (flags ())
+ (promote (until-clean))
+ (modules word5))
+
+(executable
  (name wordle)
  (flags ())
  (promote (until-clean))
  (modules wordle))
+
+(executable
+ (name word_rect)
+ (flags ())
+ (promote (until-clean))
+ (modules word_rect))
+
 
