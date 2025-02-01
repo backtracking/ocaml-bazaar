@@ -107,7 +107,7 @@ let columns = Array.make w trieh
 let rec bt i j (T (_, bri)) =
   if i = h then success ()
   else if j = w then bt (i+1) 0 triew
-  else begin
+  else (
     let T (_, brj) as cj = columns.(j) in
     let rec iter = function
       | [], _ | _, [] -> ()
@@ -118,7 +118,7 @@ let rec bt i j (T (_, bri)) =
     in
     iter (bri, brj);
     columns.(j) <- cj
-  end
+  )
 
 let () = bt 0 0 triew
 let () = printf "%d rectangles@." !count

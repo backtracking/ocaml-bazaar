@@ -158,6 +158,12 @@
  (promote (until-clean))
  (modules nerdle))
 
+(executable
+ (name pal)
+ (flags ())
+ (promote (until-clean))
+ (modules pal))
+
 (library
  (name parray)
  (modules parray))
