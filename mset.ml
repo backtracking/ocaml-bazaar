@@ -17,7 +17,10 @@ module type S = sig
   val iter: (elt -> int -> unit) -> t -> unit
   val compare: t -> t -> int
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
-  val print_nat: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
+  val print_nat: (Format.formatter -> elt -> unit) ->
+                 Format.formatter -> t -> unit
+  val print_compact: (Format.formatter -> elt -> unit) ->
+                     Format.formatter -> t -> unit
 end
 
 module type UNIVERSE = sig
@@ -194,6 +197,13 @@ module Make(X: UNIVERSE) = struct
         let print x n = for _ = 1 to n do print1 x done in
         iter print ms;
         fprintf fmt " }@]"
+
+      let print_compact pp fmt ms =
+        let open Format in
+        let print x n =
+          if n = 1 then pp fmt x else
+          if n > 1 then fprintf fmt "%a%d" pp x n in
+        iter print ms
 
     end in
     (module M : S with type elt = X.t)

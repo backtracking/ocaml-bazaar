@@ -100,12 +100,22 @@ module type S = sig
         ]}
         Elements appear in ascending order. *)
 
-  val print_nat: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
+  val print_nat: (Format.formatter -> elt -> unit) ->
+                 Format.formatter -> t -> unit
     (** Prints a multiset in the following format:
         {[
         { a,a,a,c }
         ]}
         Elements appear in ascending order. *)
+
+  val print_compact: (Format.formatter -> elt -> unit) ->
+                     Format.formatter -> t -> unit
+    (** Prints a multiset in the following format:
+        {[
+        a3c
+        ]}
+        Elements appear in ascending order. *)
+
 end
 
 module type UNIVERSE = sig

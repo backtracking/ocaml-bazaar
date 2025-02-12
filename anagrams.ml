@@ -121,7 +121,7 @@ module AD(MS: MSET) = struct
   let ms_of_hms hms =
     H.fold MS.add hms MS.empty
   let print_ms =
-    MS.print_nat pp_print_char
+    MS.print_compact pp_print_char
 
   let build dict ms0 =
     printf "  building the diagram...@.";
