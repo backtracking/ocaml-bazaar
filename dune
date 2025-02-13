@@ -91,6 +91,14 @@
  (modules garsia_wachs))
 
 (library
+ (name hashset)
+ (modules hashset))
+(test
+ (name test_hashset)
+ (modules test_hashset)
+ (libraries time hashset))
+
+(library
  (name hcpt)
  (modules hcpt))
 (test
