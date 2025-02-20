@@ -58,16 +58,18 @@ let rec rightmost n =
   if has_right n then rightmost n.right else n
 
 let has_prev n =
-  n.info land left_tag = 0
-
-let has_succ n =
-  n.info land right_tag = 0
-
-let succ n =
-  if has_right n then leftmost n.right else n.right
+  n.left != n
 
 let prev n =
+  if n.left == n then invalid_arg "prev";
   if has_left n then rightmost n.left else n.left
+
+let has_succ n =
+  n.right != n
+
+let succ n =
+  if n.right == n then invalid_arg "succ";
+  if has_right n then leftmost n.right else n.right
 
 let set_left ?(thread=false) n x =
   n.left <- x;
@@ -92,5 +94,5 @@ let node ?left ?right x =
   n
 
 let inorder f n =
-  let rec visit n = f (value n); let s = succ n in if s != n then visit s in
+  let rec visit n = f (value n); if has_succ n then visit (succ n) in
   visit (leftmost n)

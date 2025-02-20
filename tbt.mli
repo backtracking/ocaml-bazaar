@@ -3,7 +3,7 @@
 
     Type [node 'a] below implements nodes of non-empty binary trees
     carrying values of type ['a]. These are threaded binary trees,
-    with O(1) access to the predecessor and successor in inorder
+    with efficient access to the predecessor and successor in inorder
     traversal.
 
     These trees are persistent, but their implementation uses

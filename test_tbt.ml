@@ -37,7 +37,22 @@ let () =
 
 let () =
   assert (has_left b);
+  assert (left b == d);
+  assert (prev b == d);
+  assert (succ b == a);
+  assert (prev e == a);
+  assert (prev g == e);
+  assert (succ g == c);
+  (* D *)
   assert (not (has_left d));
+  assert (not (has_right d));
+  assert (not (has_prev d));
+  assert (succ d == b);
+  (* J *)
+  assert (not (has_right j));
+  assert (not (has_left j));
+  assert (prev j == f);
+  assert (not (has_succ j));
   ()
 
 let () =
