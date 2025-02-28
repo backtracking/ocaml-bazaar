@@ -43,6 +43,11 @@
  (modules burr))
 
 (executable
+ (name comb)
+ (promote (until-clean))
+ (modules comb))
+
+(executable
  (name dice_puzzle)
  (promote (until-clean))
  (modules dice_puzzle)
@@ -332,6 +337,10 @@
  (promote (until-clean))
  (modules tetris)
  (libraries curses unix))
+
+(library
+ (name tree)
+ (modules tree))
 
 (library
  (name trie)
