@@ -47,6 +47,14 @@
  (promote (until-clean))
  (modules comb))
 
+(library
+ (name deque)
+ (modules deque))
+(test
+ (name test_deque)
+ (modules test_deque)
+ (libraries deque))
+
 (executable
  (name dice_puzzle)
  (promote (until-clean))
