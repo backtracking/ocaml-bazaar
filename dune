@@ -321,6 +321,14 @@
  (modules suffix_tree))
 
 (library
+ (name tape)
+ (modules tape))
+(test
+ (name test_tape)
+ (modules test_tape)
+ (libraries tape))
+
+(library
  (name tbt)
  (modules tbt))
 (test
