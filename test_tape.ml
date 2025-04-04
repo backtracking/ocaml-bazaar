@@ -102,16 +102,19 @@ let code st x = match st, x with
   | "back",      _        -> x,       Left,  "back"
   | _ -> x, Stay, "halt"
 
-let m = create "start" code "halt" Nothing
-
-let () =
-  set_params m.tape 55 89;
+let test x y =
+  let m = create "start" code "halt" Nothing in
+  set_params m.tape x y;
   print_tape m.tape;
   printf "%a@." print m.tape;
   run m;
   printf "%a@." print m.tape;
   print_tape m.tape;
   ()
+
+let () = test 55 89
+let () = test 2048 2048
+
 
 
 
