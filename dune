@@ -62,6 +62,14 @@
  (libraries bag))
 
 (library
+ (name dill)
+ (modules dill))
+(test
+ (name test_dill)
+ (modules test_dill)
+ (libraries dill))
+
+(library
  (name dlx)
  (modules dlx))
 (library
