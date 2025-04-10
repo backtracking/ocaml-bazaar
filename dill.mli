@@ -1,23 +1,28 @@
 
 (** Doubly Infinite Lazy Lists
 
-    These are lazy lists infinite in both directions.
+    In Haskell, one of the many ways to define the infinite sequence
+    of Fibonacci numbers is as follows:
+{[
+fib = 0 : 1 : zipWith (+) fib (tail fib)
+]}
+    This is neat.
 
-    For instance, we can define the sequence of Fibonacci numbers
-    extended with negative indices as follows:
+    Now, suppose you want to define Fibonacci numbers for negative
+    indices as well (sometimes called Negafibonacci), that is the
+    sequence ..., −8, 5, −3, 2, −1, 1, 0, 1, 1, 2, 3, 5, 8, ...
+    that is infinite in both directions.
+
+    Below is a data structure for lazy lists that are infinite in both
+    directions, allowing you to define Fibonacci numbers as follows:
 {[
 let fib = fix (fun fib ->
   cons 0 (cons 1 (weld (zip (-) (lsh (lsh fib)) (lsh fib))
                        (zip (+) (lsh fib)       fib     ))))
 ]}
 
-    This is analogous to what you would do in Haskell to define
-    the sequence of Fibonacci numbers (but limited to nonnegative
-    indices):
-{[
-fib = 0 : 1 : zipWith (+) fib (tail fib)
-]}
-
+    Many thanks to Andrei Paskevich for suggesting the API below
+    and this nice solution for Fibonacci numbers.
 *)
 
 type 'a t
