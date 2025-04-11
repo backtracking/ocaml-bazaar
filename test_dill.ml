@@ -34,3 +34,17 @@ let () = assert (nth    1  fib = 1)
 let () = assert (nth    2  fib = 1)
 let () = assert (nth    3  fib = 2)
 let () = assert (nth   10  fib = 55)
+
+let fib = rsh (fix (fun fib ->
+  snoc 0 (cons 1 (weld (zip (-) (lsh fib) fib)
+                       (zip (+) (rsh fib) fib)))))
+
+let () = assert (nth (-10) fib = -55)
+let () = assert (nth ( -3) fib = 2)
+let () = assert (nth ( -2) fib = -1)
+let () = assert (nth ( -1) fib = 1)
+let () = assert (nth    0  fib = 0)
+let () = assert (nth    1  fib = 1)
+let () = assert (nth    2  fib = 1)
+let () = assert (nth    3  fib = 2)
+let () = assert (nth   10  fib = 55)
