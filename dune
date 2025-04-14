@@ -165,6 +165,13 @@
  (name leftistheap)
  (modules leftistheap))
 
+(executable
+ (name mastermind)
+ (flags ())
+ (promote (until-clean))
+ (modules mastermind)
+ (libraries curses unix))
+
 (library
  (name matrix)
  (modules matrix))
