@@ -17,8 +17,7 @@ let repeat x =
   let rec l = lazy (Cons (x, l)) in
   { neg = l; pos = l; }
 
-let rec nth_ n l =
-  let Cons (x, l) = Lazy.force l in
+let rec nth_ n (lazy (Cons (x, l))) =
   if n = 0 then x else nth_ (n - 1) l
 
 let nth n t =
@@ -33,12 +32,13 @@ let weld u v =
   { neg = u.neg; pos = v.pos; }
 
 let zip f u v =
-  let rec apply u v = match Lazy.force u, Lazy.force v with
-    | Cons (xu, u), Cons (xv, v) -> Cons (f xu xv, lazy (apply u v)) in
+  let rec apply u v = match u, v with
+    | lazy (Cons (xu, u)), lazy (Cons (xv, v)) ->
+        Cons (f xu xv, lazy (apply u v)) in
   { neg = lazy (apply u.neg v.neg); pos = lazy (apply u.pos v.pos); }
 
-let head l = match Lazy.force l with Cons (h, _) -> h
-let tail l = match Lazy.force l with Cons (_, t) -> Lazy.force t
+let head = function lazy (Cons (h, _)) -> h
+let tail = function lazy (Cons (_, t)) -> Lazy.force t
 
 let lsh t =
   { neg = lazy (Cons (head t.pos, t.neg));
