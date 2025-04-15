@@ -165,6 +165,14 @@
  (name leftistheap)
  (modules leftistheap))
 
+(library
+ (name lral)
+ (modules lral))
+(test
+ (name test_lral)
+ (modules test_lral)
+ (libraries lral))
+
 (executable
  (name mastermind)
  (flags ())

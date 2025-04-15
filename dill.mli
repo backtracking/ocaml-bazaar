@@ -65,3 +65,11 @@ val fix: ('a t -> 'a t) -> 'a t
   (** [fix f] returns a least fixpoint of [f].
 
       Raises [Lazy.Undefined] if the definition is not well-founded. *)
+
+val swap: 'a t -> 'a t
+  (** Swaps the positive (>= 0) and negative (< 0) halves: the element
+      at position [i] becomes the element at position [-i-1].  *)
+
+val reverse: 'a t -> 'a t
+  (** Returns the reversed list: the element at position [i] becomes the
+      element at position [-i]. *)

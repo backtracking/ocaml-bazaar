@@ -17,6 +17,10 @@ let () = assert (nth 1    s = 42)
 
 let ints = init (fun i -> i)
 let () = for i = -5 to 5 do assert (nth i ints = i) done
+let s = swap ints
+let () = for i = -5 to 5 do assert (nth i s = -i-1) done
+let s = reverse ints
+let () = for i = -5 to 5 do assert (nth i s = -i) done
 
 let s = zip (+) ints (rsh ints)
 let () = assert (nth 10 s = 19)

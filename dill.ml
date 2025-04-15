@@ -54,3 +54,9 @@ let fix f =
   and pos = lazy (Lazy.force (get ()).pos)
   in
   get ()
+
+let swap t =
+  { neg = t.pos; pos = t.neg; }
+
+let reverse t =
+  rsh (swap t)
