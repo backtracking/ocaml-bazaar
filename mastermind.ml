@@ -83,6 +83,14 @@ module Logic = struct
     let g = code_of_array g in
     S.filter (fun c -> sim c g = a) s
 
+  let random s =
+    let n = S.cardinal s in
+    assert (n > 0);
+    let k = ref (Random.int n) in
+    let exception Found of code in
+    try S.iter (fun c -> if !k = 0 then raise (Found c); decr k) s; assert false
+    with Found c -> c
+
 end
 
 let fail msg = eprintf "%s@." msg; endwin (); exit 1
@@ -134,6 +142,7 @@ let _ = mvwaddstr whelp 3 1 "color keys"
 let _ = mvwaddstr whelp 11 1 "other keys"
 let _ = mvwaddstr whelp 12 3 "<enter> submit"
 let _ = mvwaddstr whelp 13 3 "/       reveal"
+let _ = mvwaddstr whelp 14 3 "s       random"
 let _ = wrefresh whelp
 let () =
   colors |> Array.iteri @@ fun i (ch, color) ->
@@ -201,7 +210,7 @@ let () =
   (* start a new game *)
   restart ();
   let code = Array.init npegs (fun _ -> Random.int ncolors) in
-  let xcode = Logic.code_of_array code in
+  (* let xcode = Logic.code_of_array code in *)
   let guess = Array.make_matrix nguess npegs 0 in
   let poss = ref Logic.all in
   let row = ref 0 in
@@ -230,22 +239,34 @@ let () =
     ) else if c = Key.backspace && !col > 0 then (
       decr col;
       erase_tile !row !col;
-    ) else if c = 10 (* Key.enter *) && !col = npegs then (
-      let b, bw as a = Logic.sim_ code guess.(!row) in
-      let _ = mvwaddstr wgame (yrow !row) (xcol 4) (sprintf "%d B" b) in
-      let _ = mvwaddstr wgame (yrow !row) (xcol 6) (sprintf "%d W" bw) in
-      poss := Logic.filter !poss guess.(!row) a;
-      display_hints ();
-      if b = npegs then (
-        reveal code;
-        let _ = mvwaddstr wgame 18 2 "YOU WIN!" in
-        raise GameOver
+    ) else if c = Char.code '\n' || c = Char.code 's' then (
+      if c = Char.code 's' then (
+        let s = Logic.random !poss in
+        for i = 0 to npegs - 1 do
+          let ci = Logic.get i s in
+          guess.(!row).(i) <- ci;
+          display_tile (snd colors.(ci)) !row i
+        done;
+        col := npegs;
       );
-      if !row = 11 then (
-        let _ = mvwaddstr wgame 18 2 "YOU LOSE!" in
-        raise GameOver;
-      );
-      next_row ()
+      if !col = npegs then (
+        let b, bw as a = Logic.sim_ code guess.(!row) in
+        let _ = mvwaddstr wgame (yrow !row) (xcol 4) (sprintf "%d B" b) in
+        let _ = mvwaddstr wgame (yrow !row) (xcol 6) (sprintf "%d W" bw) in
+        poss := Logic.filter !poss guess.(!row) a;
+        display_hints ();
+        if b = npegs then (
+          reveal code;
+          let _ = mvwaddstr wgame 18 2 "YOU WIN!" in
+          raise GameOver
+        );
+        if !row = 11 then (
+          let _ = mvwaddstr wgame 18 2 "YOU LOSE!" in
+          reveal code;
+          raise GameOver;
+        );
+        next_row ()
+      )
     ) else if !col < npegs then colors |> Array.iteri @@ fun i (ch, color) ->
       if c = Char.code ch then (
         guess.(!row).(!col) <- i;

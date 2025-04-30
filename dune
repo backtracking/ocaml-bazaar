@@ -147,6 +147,14 @@
  (name jotto)
  (modules jotto))
 
+(library
+ (name lambda)
+ (modules lambda))
+(test
+ (name test_lambda)
+ (modules test_lambda)
+ (libraries lambda random_access_list))
+
 (executable
  (name latticemult)
  (promote (until-clean))
