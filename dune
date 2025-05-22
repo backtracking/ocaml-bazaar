@@ -112,6 +112,14 @@
  (modules garsia_wachs))
 
 (library
+ (name gosper_hack)
+ (modules gosper_hack))
+(test
+ (name test_gosper_hack)
+ (modules test_gosper_hack)
+ (libraries gosper_hack))
+
+(library
  (name hashset)
  (modules hashset))
 (test

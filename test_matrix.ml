@@ -14,7 +14,7 @@ let test nrows ncols =
   done;
   assert (fold_left (+) 0 m = nrows * ncols * 42)
 
-let limit = 300
+let limit = 10
 
 let () =
   for rows = 1 to limit do

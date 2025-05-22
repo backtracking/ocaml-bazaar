@@ -40,19 +40,8 @@ let next w =
   (((r lxor w) lsr 2) / c) lor r
 
 let iter n k f =
-  if n <= 0 || n >= Sys.int_size || k < 0 || k > n then invalid_arg "iter";
+  if n < 0 || n >= Sys.int_size || k < 0 || k > n then invalid_arg "iter";
+  if n > 0 then if k = 0 then f 0 else
   let limit = 1 lsl n in
   let rec loop w = if w < limit then (f w; loop (next w)) in
   loop (1 lsl k - 1)
-
-(* quick test *)
-
-let test n k =
-  let rec pop x = if x = 0 then 0 else 1 + pop (x - (x land -x)) in
-  let count = ref 0 in
-  let f w = assert (pop w = k); incr count in
-  iter n k f;
-  !count
-
-let () = assert (test 8 3 = 56)
-let () = assert (test 10 5 = 252)
