@@ -57,47 +57,29 @@ end
 
 module Krivine(X: RandomAccessList) = struct
 
-  type env =
-    | Enil
-    | Econs of term * env * env
+  type value =
+    Clos of term * env
+  and env =
+    value X.t
 
-  let rec nth n = function
-    | Enil -> failwith "not closed"
-    | Econs (t, e, _) when n = 0 -> t, e
-    | Econs (_, _, env) -> nth (n - 1) env
-
-  let rec print_env fmt = function
-    | Enil -> ()
-    | Econs (t, e, env) ->
-        Format.fprintf fmt "%a.%a" print_pair (t, e) print_env env
-
-  and print_pair fmt (t, e) =
-    Format.fprintf fmt "<%a,%a>" print t print_env e
-
-  let rec exec ?(debug=false) (t, st, e) =
-    if debug then
-    Format.printf "t = %a / st = %a / e = %a@." print t
-      (Format.pp_print_list
-         ~pp_sep:(fun fmt () -> Format.fprintf fmt ",")
-         print_pair) st print_env e;
+  let rec exec (t, st, e) =
     match t with
     | App (t, u) ->
-        exec ~debug (t, (u, e) :: st, e)
+        exec (t, (u, e) :: st, e)
     | Lam t' ->
         (match st with
          | [] -> t, e
-         | (u, e') :: st -> exec ~debug (t', st, Econs (u, e', e)))
+         | (u, e') :: st -> exec (t', st, X.cons (Clos (u, e')) e))
     | Var n ->
-        let t, e' = nth n e in
-        exec ~debug (t, st, e')
+        let Clos (t, e') = X.get n e in
+        exec (t, st, e')
 
   let start t =
-    t, [], Enil
+    t, [], X.empty
 
   let eval t =
     match exec (start t) with
-    | t, Enil -> t
-    | t, e -> Format.printf "%a / env = %a@." print t print_env e;
-              failwith "cannot eval"
+    | t, e when e = X.empty -> t
+    | t, e -> failwith "cannot eval"
 
 end
