@@ -67,3 +67,56 @@ let test l =
 let () =
   test [5; 2; 8; 3; 1];
   ()
+
+(** Another use case inspired by this interview of Linus Torvalds:
+
+    https://www.youtube.com/watch?v=o8NPllzkFhE
+
+*)
+
+module Linus = struct
+
+  type 'a cell =
+    | Nil
+    | Cons of { mutable head: 'a; mutable next: 'a cell }
+
+  type 'a mlist =
+    'a cell ref
+
+  let next_pointer = function
+    | Nil    -> assert false
+    | Cons r -> of_funs (fun () -> r.next) (fun v -> r.next <- v)
+
+  let next = function
+    | Nil    -> assert false
+    | Cons r -> r.next
+
+  (* remove the cell `p` from the list `lst`, assuming it exists *)
+  let remove (lst: 'a mlist) (p: 'a cell) : unit =
+    let rec loop pp =
+      let q = read pp in
+      if q == p then write pp (next q) else loop (next_pointer q) in
+    loop (of_ref lst)
+
+  (* test *)
+
+  let rec length = function Nil -> 0 | Cons { next = l } -> 1 + length l
+  let rec print = function
+    | Nil -> Format.printf "@."
+    | Cons { head = x; next = l } -> Format.printf "->%d" x; print l
+
+  let () =
+    let create () =
+      let c3 = Cons { head = 3; next = Nil } in
+      let c2 = Cons { head = 2; next = c3  } in
+      let c1 = Cons { head = 1; next = c2  } in
+      ref c1, c1, c2, c3 in
+    let lst, c1, c2, c3 = create () in
+    remove lst c1; assert (length !lst = 2); print !lst;
+    let lst, c1, c2, c3 = create () in
+    remove lst c2; assert (length !lst = 2); print !lst;
+    let lst, c1, c2, c3 = create () in
+    remove lst c3; assert (length !lst = 2); print !lst;
+
+end
+
