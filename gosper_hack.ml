@@ -5,6 +5,9 @@
    order and in linear time, with O(1) cheap operations to move from
    one word to the next.
 
+   Said otherwise, iterates over all subsets of {0,1,...,n-1} of
+   size k, where each subset is represented as a bit vector.
+
    Principle: Identify the rightmost segment of 1 bits,
                                   i
          w = ?????????000000111111100000
@@ -32,6 +35,12 @@
    Finally, OR this with r to get the expected word:
 
              ?????????00000100000111111
+                                 < m-1>
+
+   Works for 0 <= k <= n <= Sys.int_size.
+
+   Gosper's Hack is explained in Hacker's Delight (Henri Warren,
+   Addison-Wesley, 2013); see pages 14--15.
 *)
 
 let next w =
@@ -40,8 +49,8 @@ let next w =
   (((r lxor w) lsr 2) / c) lor r
 
 let iter n k f =
-  if n < 0 || n >= Sys.int_size || k < 0 || k > n then invalid_arg "iter";
-  if n > 0 then if k = 0 then f 0 else
-  let limit = 1 lsl n in
-  let rec loop w = if w < limit then (f w; loop (next w)) in
-  loop (1 lsl k - 1)
+  if n < 0 || n > Sys.int_size || k < 0 || k > n then invalid_arg "iter";
+  let first = 1 lsl k - 1 in
+  let last = first lsl (n - k) in
+  let rec loop w = f w; if w <> last then loop (next w) in
+  loop first
