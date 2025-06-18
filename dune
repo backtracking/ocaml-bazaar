@@ -148,6 +148,14 @@
  (libraries idd))
 
 (library
+ (name invert)
+ (modules invert))
+(test
+ (name test_invert)
+ (modules test_invert)
+ (libraries invert))
+
+(library
  (name itv)
  (modules itv))
 (test
