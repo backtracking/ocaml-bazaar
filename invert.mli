@@ -9,5 +9,7 @@ val iter_to_seq : (('a -> unit) -> unit) -> 'a Seq.t
   (** [iter_to_seq iter] returns a sequence corresponding to the
       iterator provided by function [iter].
 
-      Caveat: Function [iter] runs in a new domain.
+      Caveat:
+      - The returned sequence is ephemeral.
+      - Function [iter] runs in a new domain.
    *)
