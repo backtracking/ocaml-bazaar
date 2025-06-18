@@ -142,6 +142,10 @@
  (name test_idd)
  (modules test_idd)
  (libraries idd))
+(test
+ (name count_re)
+ (modules count_re)
+ (libraries idd))
 
 (library
  (name itv)

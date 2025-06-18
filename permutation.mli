@@ -70,7 +70,7 @@ val seq_all: int -> permutation Seq.t
 
 val list_all: int -> permutation list
 (** returns all permutations in lexicographic order.
-    Beware that is is costly, namely time and space O(n * n!) *)
+    Beware that it is costly, namely time and space O(n * n!) *)
 
 (** {2 Input/output} *)
 
@@ -127,6 +127,12 @@ val permute_list: permutation -> 'a list -> 'a list
 (** [permute_list p l] returns a new list, obtained by permuting [l]
     using [p], that is, where element at position [i] in [l]
     is moved to position [p(i)] in the result list *)
+
+(** {2 Hashing and comparison}
+
+  Though it is fine to use [Hashtbl.hash] and structural comparison
+  ([=] and [Stdlib.compare]) on values of type [permutation], the
+  following operations are slightly more efficient. *)
 
 type t = permutation
 
