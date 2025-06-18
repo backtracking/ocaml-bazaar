@@ -44,6 +44,7 @@ let iter_to_seq (type a) (iter: (a -> unit) -> unit) : a Seq.t =
       Mutex.lock m;
       Condition.wait empty m;
       v := Done;
+      Condition.signal full;
       Mutex.unlock m
   ) in
   consume
