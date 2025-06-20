@@ -17,6 +17,14 @@
  (libraries arrays))
 
 (library
+ (name bintree)
+ (modules bintree))
+(test
+ (name test_bintree)
+ (modules test_bintree)
+ (libraries prtree bintree))
+
+(library
  (name bitset)
  (modules bitset))
 (test
@@ -315,14 +323,6 @@
  (promote (until-clean))
  (modules re)
  (libraries time))
-
-(library
- (name remy)
- (modules remy))
-(test
- (name test_remy)
- (modules test_remy)
- (libraries prtree remy))
 
 (library
  (name RMQ)
