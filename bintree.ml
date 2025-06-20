@@ -3,6 +3,24 @@
 
 type 'a t = E | N of 'a t * 'a * 'a t
 
+let rec height_cps t k = match t with
+  | E           -> k 0
+  | N (l, _, r) -> height_cps l (fun hl ->
+                   height_cps r (fun hr ->
+                   k (1 + max hl hr)))
+
+let height t = height_cps t (fun h -> h)
+
+let rec size s = function
+  | []                -> s
+  | E           :: st -> size s st
+  | N (E, _, E) :: st -> size (s + 1) st
+  | N (E, _, r) :: st -> size (s + 1) (r :: st)
+  | N (l, _, E) :: st -> size (s + 1) (l :: st)
+  | N (l, _, r) :: st -> size (s + 1) (l :: r :: st)
+
+let size t = size 0 [t]
+
 let rec print_dyck fmt = function
   | E           -> ()
   | N (l, _, r) -> Format.fprintf fmt "(%a)%a" print_dyck l print_dyck r
