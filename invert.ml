@@ -47,4 +47,5 @@ let iter_to_seq (type a) (iter: (a -> unit) -> unit) : a Seq.t =
       Condition.signal full;
       Mutex.unlock m
   ) in
+  (* Gc.finalise (fun _ -> kill d) consume; *)
   consume

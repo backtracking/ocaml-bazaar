@@ -17,3 +17,8 @@ let () = Seq.iter print s; Format.printf "done@."
 let s = iter_to_seq iter
 let print x = Format.printf "%d @?" x; if x = 5 then raise Exit
 let () = try Seq.iter print s with Exit -> Format.printf "done@."
+
+let test () =
+  let s = iter_to_seq iter in
+  let print x = Format.printf "%d @?" x in
+  Seq.iter print (Seq.take 5 s)
