@@ -153,7 +153,7 @@
 (test
  (name test_invert)
  (modules test_invert)
- (libraries invert))
+ (libraries unix invert))
 
 (library
  (name itv)
@@ -315,6 +315,14 @@
  (promote (until-clean))
  (modules re)
  (libraries time))
+
+(library
+ (name remy)
+ (modules remy))
+(test
+ (name test_remy)
+ (modules test_remy)
+ (libraries prtree remy))
 
 (library
  (name RMQ)
