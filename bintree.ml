@@ -25,7 +25,11 @@ let rec print_dyck fmt = function
   | E           -> ()
   | N (l, _, r) -> Format.fprintf fmt "(%a)%a" print_dyck l print_dyck r
 
-(** Uniform Random Binary Trees (Rémy's algorithm) *)
+(** Uniform Random Binary Trees (Rémy's algorithm)
+
+    [random_binary_tree n f] returns a random binary tree of size [n].
+    The nodes are labelled with [f 0], [f 1], ..., [f (n-1)], in
+    a random order. *)
 
 type 'a node = Leaf | Internal of int * 'a * int
 
