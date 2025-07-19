@@ -175,6 +175,11 @@
  (name jotto)
  (modules jotto))
 
+(executable
+ (name la_disparition)
+ (promote (until-clean))
+ (modules la_disparition))
+
 (library
  (name lambda)
  (modules lambda))
