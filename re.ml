@@ -88,6 +88,7 @@ let accept3 r s =
 
 let () = declare "cps3" accept3
 
+(* double-barrel CPS *)
 let accept4 r w =
   let n = String.length w in
   let rec a r i k o = match r with
@@ -99,12 +100,31 @@ let accept4 r w =
         a r1 i k (fun () -> a r2 i k o)
     | Concat (r1, r2) ->
         a r1 i (fun j h -> a r2 j k h) o
-    | Star r1 ->
+    | Star r1 -> (* try to match the empty word first *)
         k i (fun () ->
           a r1 i (fun j h -> if i < j then a r j k h else h ()) o) in
    a r 0 (fun i h -> i = n || h ()) (fun () -> false)
 
 let () = declare "double-barrel-cps" accept4
+
+(* variant for Star: try to match `r1` first *)
+let accept5 r w =
+  let n = String.length w in
+  let rec a r i k o = match r with
+    | Empty -> o ()
+    | Epsilon -> k i o
+    | Char c ->
+        if i < n && w.[i] = c then k (i + 1) o else o ()
+    | Alt (r1, r2) ->
+        a r1 i k (fun () -> a r2 i k o)
+    | Concat (r1, r2) ->
+        a r1 i (fun j h -> a r2 j k h) o
+    | Star r1 -> (* try to match `r1` first *)
+        a r1 i (fun j h -> if i < j then a r j k h else h ())
+         (fun () -> k i o) in
+   a r 0 (fun i h -> i = n || h ()) (fun () -> false)
+
+let () = declare "double-barrel-cps-variant" accept5
 
 let uncps r w =
   let n = String.length w in

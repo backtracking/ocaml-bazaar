@@ -83,7 +83,7 @@ let () = test ['a', 2; 'b', 2; 'c', 2; 'd', 2; ]
 let () = must_fail create ['a', 12; 'b', -1; 'c', 27]
 let () = must_fail create ['a', 12; 'a', 42; 'c', 27]
 
-
-
-
-
+let () =
+  let open Format in
+  printf "FR = %a@." (Mset.FR.print_nat pp_print_char) Mset.FR.full;
+  printf "EN = %a@." (Mset.EN.print_nat pp_print_char) Mset.EN.full

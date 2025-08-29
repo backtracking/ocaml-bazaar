@@ -123,7 +123,7 @@ module AD(MS: MSET) = struct
   let print_ms =
     MS.print_compact pp_print_char
 
-  let build dict ms0 =
+  let build ?(verbose=false) dict ms0 =
     printf "  building the diagram...@.";
     let add hms w d = M.add (ms_of_hms hms) w d in
     let dict = Hms.fold add dict M.empty in
@@ -162,8 +162,8 @@ module AD(MS: MSET) = struct
     and dump ms br =
       H.add visited ms ();
       fprintf fmt "@[<v>node %a:@\n" print_ms ms;
-      let branch ms' ((n, wl), {ms;_}) =
-        fprintf fmt "  @[<hov 2>%a => %a@]@\n" print_ms ms' print_ms ms in
+      let branch _ms' ((_n, wl), {ms;_}) =
+        fprintf fmt "  @[<hov 2>(%a) => %a@]@\n" print_list wl print_ms ms in
       M.iter branch br;
       fprintf fmt "@]";
       M.iter (fun _ (_, ad) -> print ad) br
@@ -172,6 +172,7 @@ module AD(MS: MSET) = struct
 
   let count ad =
     let memo = H.create 16 in (* min, ms => count *)
+    (* count paths with increasing multisets no smaller than `min` *)
     let rec count min ad =
       let key = min, ad.ms in
       try H.find memo key
@@ -198,13 +199,11 @@ let () =
     let dict0 = Hms.create 16 in
     let add ms wl = if MS.subset ms letters then Hms.add dict0 ms wl in
     Hms.iter add dict;
-    printf "  %d multisets@." (Hms.length dict0);
-    printf "  pruned dictionary:@.";
-    let print ms (n, wl) =
-      printf "    @[<hov 2>%a => %d (%a)@]@." MS.print ms n print_list wl in
-    Hms.iter print dict0;
+    printf "  pruned dictionary (%d entries):@." (Hms.length dict0);
+    let print _ms (_n, wl) = printf "(%a)@ " print_list wl in
+    printf "    @[<hov 2>"; Hms.iter print dict0; printf "@]@.";
     (* 1-word anagrams *)
-    if Hms.mem dict letters then (
+    if Hms.mem dict0 letters then (
       let n, wl = Hms.find dict letters in
       printf "  1-word anagrams:@.    @[<hov 2>%a (%d words)@]@."
         print_list wl n
@@ -212,13 +211,28 @@ let () =
     (* 2-word anagrams *)
     printf "  2-word anagrams:@.";
     let find ms1 (_,wl1) =
-      if MS.subset ms1 letters then (
-        let ms2 = MS.diff letters ms1 in
-        if MS.hash ms1 <= MS.hash ms2 && Hms.mem dict ms2 then
-          printf "    @[<hov 2>[%a] x [%a]@]@." print_list wl1
-            print_list (snd (Hms.find dict ms2))
-    ) in
-    Hms.iter find dict;
+      assert (MS.subset ms1 letters);
+      let ms2 = MS.diff letters ms1 in
+      if MS.hash ms1 <= MS.hash ms2 && Hms.mem dict0 ms2 then
+        printf "    @[<hov 2>[%a] x [%a]@]@." print_list wl1
+          print_list (snd (Hms.find dict0 ms2))
+    in
+    Hms.iter find dict0;
+    (* 3-word anagrams *)
+    (* printf "  3-word anagrams:@."; *)
+    (* let find ms1 (_,wl1) = *)
+    (*   assert (MS.subset ms1 letters); *)
+    (*   let d = MS.diff letters ms1 in *)
+    (*   let find ms2 (_,wl2) = *)
+    (*     if MS.hash ms1 <= MS.hash ms2 && MS.subset ms2 d then ( *)
+    (*       let ms3 = MS.diff d ms2 in *)
+    (*       if MS.hash ms2 <= MS.hash ms3 && Hms.mem dict0 ms3 then *)
+    (*         printf "    @[<hov 2>[%a] x [%a] x [%a]@]@." print_list wl1 *)
+    (*           print_list wl2 print_list (snd (Hms.find dict0 ms3)) *)
+    (*     ) in *)
+    (*   Hms.iter find dict0 *)
+    (* in *)
+    (* Hms.iter find dict0; *)
     (* anagram diagram *)
     let u = MS.elements letters in
     let module Ms = (val CharMset.create u) in
@@ -227,7 +241,7 @@ let () =
     printf "  ms = %a@." (Ms.print pp_print_char) ms;
     try
       let ad = Ad.build dict0 ms in
-      printf "    %a@." Ad.print ad;
+      (* printf "    %a@." Ad.print ad; *)
       printf "    count = %d@." (Ad.count ad);
       ()
     with Not_found ->
@@ -235,3 +249,8 @@ let () =
   done with End_of_file -> ()
 
 
+(*
+COMPTER LES ANAGRAMMES
+  57210 nodes
+  count = 77498784
+*)

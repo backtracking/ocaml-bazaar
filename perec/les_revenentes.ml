@@ -7,10 +7,9 @@ let p8 n = (n lsl 62) lsr 62 + (n lsl 61) lsr 62
          + (n lsl 56) lsr 62 + (n lsl 55) lsr 62
 let p16 n = p8 n + p8 (n lsr 8)
 let p32 n = p16 n + p16 (n lsr 16)
-let p n = p32 n + p32 (n lsr 32)
-let test n = p (p (p (p n)))
-
-let m2 n = (n lsl 62) lsr 62
+let p n = p32 n + p32 (n lsr 32) (* pop count *)
+let test n = p (p (p (p n))) (* un seul bit ! *)
+let m2 n = (n lsl 62) lsr 62 (* n modulo 2 * *)
 
 let f0 _ = 0
 let f1 _ = 1

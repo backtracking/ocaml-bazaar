@@ -144,6 +144,14 @@
  (libraries hcpt))
 
 (library
+ (name hd)
+ (modules hd))
+(test
+ (name test_hd)
+ (modules test_hd)
+ (libraries hd))
+
+(library
  (name idd)
  (modules idd))
 (test
@@ -174,11 +182,6 @@
 (executable
  (name jotto)
  (modules jotto))
-
-(executable
- (name la_disparition)
- (promote (until-clean))
- (modules la_disparition))
 
 (library
  (name lambda)
