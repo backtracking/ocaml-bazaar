@@ -1,4 +1,6 @@
 
+(* see also print_rat for a nice application of Floyd's algorithm *)
+
 open Floyd
 
 let next ~mu ~lambda =

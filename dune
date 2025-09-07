@@ -302,6 +302,15 @@
  (libraries pointer))
 
 (library
+ (name print_rat)
+ (modules print_rat)
+ (libraries zarith floyd))
+(test
+ (name test_print_rat)
+ (modules test_print_rat)
+ (libraries print_rat))
+
+(library
  (name prtree)
  (modules prtree))
 
