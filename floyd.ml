@@ -25,21 +25,21 @@ let cycle_detection equal x0 next =
   let rec loop t h =
     equal t h ||
     h |> fun h ->
-    h |> fun h -> loop (Option.get (next t)) h
+    h |> loop (Option.get (next t))
   in
-  x0 |> fun h -> loop x0 h
+  x0 |> loop x0
 
 (* a variant suggested by Quentin Garchery *)
 
-let cycle_detection_ equal x0 next =
+let cycle_detection equal x0 next =
   let (|>) x f = match next x with
     | None   -> false
     | Some x -> f x in
   let rec loopk start k =
     let rec loop i x =
       equal x start ||
-      if i = k then loopk x (2 * k) else x |> fun x -> loop (i+1) x
+      if i = k then loopk x (2 * k) else x |> loop (i+1)
     in
-    start |> fun x -> loop 1 x
+    start |> loop 1
   in
   loopk x0 4

@@ -13,10 +13,10 @@ let rec iter n f x = if n = 0 then x else iter (n-1) f (f x)
 (* prints the decimal expansion *)
 let print fmt a b = (* assumes 0 <= a/b < 10 *)
   let cmp = Z.equal in
-  let next a = let _, r = Z.div_rem a b in Z.(ten * r) in
+  let next a = let r = Z.erem a b in Z.(ten * r) in
   let next0 a = if a = Z.zero then None else Some (next a) in
   let digit a =
-    let q, r = Z.div_rem a b in
+    let q, r = Z.ediv_rem a b in
     assert (q < ten);
     Format.pp_print_char fmt (Char.chr (48 + Z.to_int q));
     Z.(ten * r) in
