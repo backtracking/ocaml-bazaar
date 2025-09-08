@@ -31,7 +31,7 @@ let cycle_detection equal x0 next =
 
 (* a variant suggested by Quentin Garchery *)
 
-let cycle_detection equal x0 next =
+let cycle_detection_ equal x0 next =
   let (|>) x f = match next x with
     | None   -> false
     | Some x -> f x in
@@ -42,4 +42,4 @@ let cycle_detection equal x0 next =
     in
     start |> loop 1
   in
-  loopk x0 4
+  loopk x0 1
