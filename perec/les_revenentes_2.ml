@@ -11,6 +11,3 @@ let rec f n =
   (n = 1 && f1 ()) ||
   (r := g f (n-2) + g f (n-1); 0=0)
 let f n = r := 0; g f n
-
-(* test (ne compte pas) *)
-let () = for n = 0 to 10 do Format.printf "f(%2d) = %2d@." n (f n) done
