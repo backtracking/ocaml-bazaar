@@ -21,6 +21,11 @@ module type S = sig
                  Format.formatter -> t -> unit
   val print_compact: (Format.formatter -> elt -> unit) ->
                      Format.formatter -> t -> unit
+  module Internals : sig
+    val bit_size: int
+    val number_of_mutisets: int64
+    val dump: unit -> unit
+  end
 end
 
 module type UNIVERSE = sig
@@ -68,12 +73,13 @@ module Make(X: UNIVERSE) = struct
     (* table `slot` maps each elt to a triple (offset, capacity, mask)
        where `mask = 2^k-1` with `k` the number of bits *)
     let slot = H.create 64 in
-    let assign = let ofs = ref 0 in fun (x, cap) ->
+    let next_ofs = ref 0 in
+    let assign (x, cap) =
       if H.mem slot x then invalid_arg "create: duplicate element";
       let k = ceillog2 cap in
-      H.add slot x (!ofs, cap, (1 lsl k) - 1);
-      ofs := !ofs + k;
-      if !ofs > Sys.int_size then invalid_arg "create: capacity exceeded";
+      H.add slot x (!next_ofs, cap, (1 lsl k) - 1);
+      next_ofs := !next_ofs + k;
+      if !next_ofs > Sys.int_size then invalid_arg "create: capacity exceeded";
       in
     List.iter assign universe;
     let [@inline always] get map ofs m =
@@ -205,10 +211,35 @@ module Make(X: UNIVERSE) = struct
           if n > 1 then fprintf fmt "%a%d" pp x n in
         iter print ms
 
+      module Internals = struct
+        let bit_size = !next_ofs
+        let number_of_mutisets =
+          H.fold (fun _ (_,cap,_) n -> Int64.(mul n (of_int (cap + 1)))) slot 1L
+        let dump () =
+          Format.printf "bit size = %d@." bit_size;
+          Format.printf "%Lu multisets@." number_of_mutisets
+      end
+
     end in
     (module M : S with type elt = X.t)
 
 end
+
+module Chars = Make(Char)
+let chars = Chars.create
+
+let default_filter = function
+  | '\009' | '\010' | '\012' | '\013' | ' ' -> None
+  | c -> Some c
+
+let of_string ?(filter=default_filter) s =
+  let h = Hashtbl.create 16 in
+  let add c =
+    try Hashtbl.replace h c (1 + Hashtbl.find h c)
+    with Not_found -> Hashtbl.add h c 1 in
+  let add c = match filter c with | None -> () | Some c -> add c in
+  String.iter add s;
+  chars (Hashtbl.fold (fun c n acc -> (c, n) :: acc) h [])
 
 (* Source:
    https://fr.wikipedia.org/wiki/Fr%C3%A9quence_d%27apparition_des_lettres *)
@@ -247,8 +278,7 @@ module FR = struct
     'Y', 0.128;
     'K', 0.074;
     'W', 0.049; ]
-  module M = Make(Char)
-  include (val M.create u)
+  include (val chars u)
 end
 module EN = struct
   let u = from_frequencies [
@@ -278,6 +308,5 @@ module EN = struct
     'Y', 1.974;
     'K', 0.772;
     'W', 2.360; ]
-  module M = Make(Char)
-  include (val M.create u)
+  include (val chars u)
 end

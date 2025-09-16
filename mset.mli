@@ -116,6 +116,18 @@ module type S = sig
         ]}
         Elements appear in ascending order. *)
 
+  (** some internal information for curious users *)
+  module Internals : sig
+    val bit_size: int
+    (** the total number of bits used in the internal representation *)
+
+    val number_of_mutisets: int64
+    (** the total number of distinct sub-multisets (usigned int64) *)
+
+    val dump: unit -> unit
+    (** prints the above information on standard output *)
+  end
+
 end
 
 module type UNIVERSE = sig
@@ -131,6 +143,18 @@ module Make(X: UNIVERSE) : sig
         Raises [Invalid_argument] if the total capacity is too large to
         fit inside the bits of a single integer. *)
 end
+
+val chars: (char * int) list -> (module S with type elt = char)
+  (** Returns a multiset implementation for a universe of characters. *)
+
+val of_string: ?filter:(char -> char option) -> string ->
+  (module S with type elt = char)
+  (** Returns a multiset implementation for a universe corresponding
+      to the characters of a given string.
+      Characters can be filtered with function [filter]: a character
+      [c] is either transformed to another character [d] with [Some d],
+      or filtered out with [None]. The default filter function
+      ignores blank characters (ASCII codes 9, 10, 12, 13, and 32). *)
 
 (** Multisets of uppercase letters (without accents), according to the
     frequencies of letters in French and English. *)

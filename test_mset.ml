@@ -1,12 +1,13 @@
-
-include Mset.Make(Char)
+open Mset
 
 let [@inline always] must_fail f x =
   try ignore (f x); assert false with _ -> ()
 
 let () =
-  let module M = (val create ['a', 3; 'b', 1; 'c', 2]) in
+  let module M = (val chars ['a', 3; 'b', 1; 'c', 2]) in
   let open M in
+  Format.printf "ms = %a@." (print Format.pp_print_char) M.full;
+  Internals.dump ();
   assert (occ 'a' full = 3);
   assert (occ 'b' full = 1);
   assert (occ 'c' full = 2);
@@ -45,16 +46,18 @@ let () =
   ()
 
 let test xl =
-  let module M = (val create xl) in
+  let module M = (val chars xl) in
   let open M in
   let rec addx (n, ms as acc) (x, c) =
     if c = 0 then (must_fail (add1 x) ms; acc)
     else addx (n+1, add1 x ms) (x, c-1) in
   let n, ms = List.fold_left addx (0,empty) xl in
   assert (size ms = n);
+  assert (ms = full);
   assert (inclusion empty ms);
   assert (inclusion ms ms);
   Format.printf "ms = %a@." (print Format.pp_print_char) ms;
+  Internals.dump ();
   List.iter (fun (x, c) -> assert (occ x ms = c)) xl;
   let rec removex (n, ms as acc) (x, c) =
     assert (size ms = n);
@@ -63,8 +66,27 @@ let test xl =
   let _, ms = List.fold_left removex (n,ms) xl in
   assert (size ms = 0)
 
+let () = ignore (chars ['a', max_int])
+let () = ignore (chars ['a', 1; 'b', max_int])
+let () = test []
+let () = test ['a', 2; 'b', 10; 'c', 7]
+let () = test ['a', 12; 'b', 42; 'c', 27]
+let () = test ['a', 2; 'b', 2; 'c', 2; 'd', 2; ]
+let () = must_fail chars ['a', 12; 'b', -1; 'c', 27]
+let () = must_fail chars ['a', 12; 'a', 42; 'c', 27]
+
+let test s =
+  let module M = (val of_string s) in
+  let open M in
+  Format.printf "ms = %a@." (print Format.pp_print_char) full;
+  Internals.dump ();
+  ()
+
+let () = test "tous les anagrammes de ce titre"
+
 let () =
-  let module M = (val create ['a', max_int; 'b', 1]) in
+  let module M = (val chars ['a', max_int; 'b', 1]) in
+  M.Internals.dump ();
   let open M in
   let ms = empty in
   let ms = add1 'b' ms in
@@ -74,14 +96,6 @@ let () =
   assert (occ 'b' ms = 1);
   assert (occ 'a' ms = max_int);
   ()
-
-let () = ignore (create ['a', max_int])
-let () = ignore (create ['a', 1; 'b', max_int])
-let () = test ['a', 2; 'b', 10; 'c', 7]
-let () = test ['a', 12; 'b', 42; 'c', 27]
-let () = test ['a', 2; 'b', 2; 'c', 2; 'd', 2; ]
-let () = must_fail create ['a', 12; 'b', -1; 'c', 27]
-let () = must_fail create ['a', 12; 'a', 42; 'c', 27]
 
 let () =
   let open Format in
