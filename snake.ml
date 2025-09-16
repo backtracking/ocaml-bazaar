@@ -133,14 +133,15 @@ let king = [3;2;3;2;2;4;2;3;2;3;2;3;2;2;2;
 let puzzle = List.rev king
 let puzzle = king
 
-(* let n = 3 *)
+let n = 3
 let standard = [3; 2; 2; 3; 2; 3; 2; 2; 3; 3; 2; 2; 2; 3; 3; 3; 3]
   (* 2 solutions, immediate *)
 let mean_green = [3;3;2;3;2;3;2;2;2;3;3;3;2;3;3;3]
   (* 2 solutions, immediate *)
 let mine = [3;3;2;3;3;2;2;2;3;2;2;3;2;3;2;3;3]
+  (* 6 solutions, immediate *)
 
-(* let puzzle = standard *)
+let puzzle = standard
 
 let () =
   let snake = Snake.create ~n puzzle in
