@@ -43,6 +43,14 @@ let () =
   assert (size ms = 4);
   let ms = add 'c' 2 ms in
   assert (size ms = 6);
+  let nss = ref 0 in
+  Format.printf "@[<hov 2>subsets:";
+  let print ms = incr nss;
+    Format.printf " {%a}" (print_compact Format.pp_print_char) ms in
+  iter_sub print full; Format.printf "@]@.";
+  assert (Int64.of_int !nss = Internals.number_of_multisets);
+  let n = fold_sub (fun _ n -> n+1) full 0 in
+  assert (Int64.of_int n = Internals.number_of_multisets);
   ()
 
 let test xl =
@@ -64,11 +72,14 @@ let test xl =
     if c = 0 then (must_fail (remove x) ms; acc)
     else removex (n-1, remove x ms) (x, c-1) in
   let _, ms = List.fold_left removex (n,ms) xl in
-  assert (size ms = 0)
+  assert (size ms = 0);
+  let n = fold_sub (fun _ n -> n+1) full 0 in
+  assert (Int64.of_int n = Internals.number_of_multisets)
 
 let () = ignore (chars ['a', max_int])
 let () = ignore (chars ['a', 1; 'b', max_int])
 let () = test []
+let () = test ['a', 0; 'b', 1]
 let () = test ['a', 2; 'b', 10; 'c', 7]
 let () = test ['a', 12; 'b', 42; 'c', 27]
 let () = test ['a', 2; 'b', 2; 'c', 2; 'd', 2; ]
@@ -97,7 +108,7 @@ let () =
   assert (occ 'a' ms = max_int);
   ()
 
-let () =
-  let open Format in
-  printf "FR = %a@." (Mset.FR.print_nat pp_print_char) Mset.FR.full;
-  printf "EN = %a@." (Mset.EN.print_nat pp_print_char) Mset.EN.full
+(* let () = *)
+(*   let open Format in *)
+(*   printf "FR = %a@." (Mset.FR.print_nat pp_print_char) Mset.FR.full; *)
+(*   printf "EN = %a@." (Mset.EN.print_nat pp_print_char) Mset.EN.full *)

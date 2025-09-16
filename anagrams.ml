@@ -73,7 +73,7 @@ let dict : dictionary =
   let nclasses = ref 0 in
   let add () s =
     incr nwords;
-    let s = String.uppercase_ascii s in
+    let s = if !capitalize then String.uppercase_ascii s else s in
     let ms = MS.of_string s in
     Hms.replace dict ms
       (cons s (try Hms.find dict ms

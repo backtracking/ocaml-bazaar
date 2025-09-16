@@ -55,6 +55,12 @@
  (promote (until-clean))
  (modules comb))
 
+(executable
+  (name count_anagrams)
+  (modules count_anagrams)
+  (promote (until-clean))
+  (libraries zarith mset))
+
 (library
  (name deque)
  (modules deque))

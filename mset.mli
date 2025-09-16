@@ -12,9 +12,7 @@
     is the sum of its multiplicities, here 6.
 
     This module implements a persistent data structure for multisets
-    using bitmaps.  Each multiset is internally represented by a
-    single integer, provided the total number of bits needed does not
-    exceed [Sys.int_size].
+    using bitmaps.
 
     The universe (i.e. the elements that can be stored in the multiset
     and, for each, its maximal multiplicity) has to be provided
@@ -81,12 +79,23 @@ module type S = sig
         not included in [ms2]. *)
 
   val iter: (elt -> int -> unit) -> t -> unit
-    (** Iterates over all the elements of the universe, in ascending order.
-        For each element, it applies the given function to the element
-        and its multiplicity. This iteration includes elements for which
-        the multiplicity is zero. *)
+    (** Iterates over all the elements of the universe, in ascending
+        order.  For each element, it applies the given function to the
+        element and its multiplicity in the given multiset.  This
+        iteration includes elements for which the multiplicity is
+        zero. *)
 
+  val iter_sub: (t -> unit) -> t -> unit
+    (** Iterates over all the sub-multisets of the given multiset. *)
+
+  val fold_sub: (t -> 'a -> 'a) -> t -> 'a -> 'a
+    (** Folds over all the sub-multisets of the given multiset. *)
+
+  val equal: t -> t -> bool
   val compare: t -> t -> int
+  val hash: t -> int
+
+  val lex_compare: t -> t -> int
     (** Lexicographic comparison of multisets.
 
         Note: The polymorphic function [Stdlib.compare] can also be
@@ -121,7 +130,7 @@ module type S = sig
     val bit_size: int
     (** the total number of bits used in the internal representation *)
 
-    val number_of_mutisets: int64
+    val number_of_multisets: int64
     (** the total number of distinct sub-multisets (usigned int64) *)
 
     val dump: unit -> unit

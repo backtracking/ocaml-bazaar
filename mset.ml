@@ -15,7 +15,12 @@ module type S = sig
   val inclusion: t -> t -> bool
   val diff: t -> t -> t
   val iter: (elt -> int -> unit) -> t -> unit
+  val iter_sub: (t -> unit) -> t -> unit
+  val fold_sub: (t -> 'a -> 'a) -> t -> 'a -> 'a
+  val equal: t -> t -> bool
   val compare: t -> t -> int
+  val hash: t -> int
+  val lex_compare: t -> t -> int
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
   val print_nat: (Format.formatter -> elt -> unit) ->
                  Format.formatter -> t -> unit
@@ -23,7 +28,7 @@ module type S = sig
                      Format.formatter -> t -> unit
   module Internals : sig
     val bit_size: int
-    val number_of_mutisets: int64
+    val number_of_multisets: int64
     val dump: unit -> unit
   end
 end
@@ -151,6 +156,26 @@ module Make(X: UNIVERSE) = struct
       let iter f ms =
         List.iter (fun (x, _) -> f x (occ x ms)) universe
 
+      let iter_sub f ms =
+        let rec iter sms = function
+          | [] -> f sms
+          | (x, _) :: u ->
+              for i = 0 to occ x ms do
+                iter (add x i sms) u
+              done
+        in
+        iter empty universe
+
+      let fold_sub f ms acc =
+        let rec foldi lo hi f acc =
+          if lo > hi then acc else foldi (lo+1) hi f (f lo acc) in
+        let rec fold sms acc = function
+          | [] -> f sms acc
+          | (x, _) :: u ->
+              foldi 0 (occ x ms) (fun i acc -> fold (add x i sms) acc u) acc
+        in
+        fold empty acc universe
+
       let inclusion ms1 ms2 =
         let check (x, _) = occ x ms1 <= occ x ms2 in
         List.for_all check universe
@@ -162,7 +187,11 @@ module Make(X: UNIVERSE) = struct
           add x (n2 - n1) acc in
         List.fold_left add empty universe
 
-      let compare ms1 ms2 =
+      let equal : t -> t -> bool = (=)
+      let compare : t -> t -> int = Stdlib.compare
+      let hash : t -> int = Hashtbl.hash
+
+      let lex_compare ms1 ms2 =
         let rec compare = function
           | [] -> 0
           | (x, _) :: xl ->
@@ -213,11 +242,11 @@ module Make(X: UNIVERSE) = struct
 
       module Internals = struct
         let bit_size = !next_ofs
-        let number_of_mutisets =
+        let number_of_multisets =
           H.fold (fun _ (_,cap,_) n -> Int64.(mul n (of_int (cap + 1)))) slot 1L
         let dump () =
           Format.printf "bit size = %d@." bit_size;
-          Format.printf "%Lu multisets@." number_of_mutisets
+          Format.printf "%Lu multisets@." number_of_multisets
       end
 
     end in
