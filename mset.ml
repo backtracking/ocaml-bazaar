@@ -15,8 +15,9 @@ module type S = sig
   val inclusion: t -> t -> bool
   val diff: t -> t -> t
   val iter: (elt -> int -> unit) -> t -> unit
-  val iter_sub: (t -> unit) -> t -> unit
-  val fold_sub: (t -> 'a -> 'a) -> t -> 'a -> 'a
+  val iter_sub: (t -> t -> unit) -> t -> unit
+  val fold_sub: (t -> t -> 'a -> 'a) -> t -> 'a -> 'a
+  val nb_sub: t -> int
   val equal: t -> t -> bool
   val compare: t -> t -> int
   val hash: t -> int
@@ -96,51 +97,61 @@ module Make(X: UNIVERSE) = struct
 
       type elt = X.t
 
-      type t = { size: int; map: int }
+      type t = int
 
-      let empty = { size = 0; map = 0 }
+      let empty =
+        0
 
       let full =
         let add ms (x, _) =
           let ofs, c, _ = H.find slot x in
-          { size = ms.size + c; map = ms.map lor (c lsl ofs) } in
+          ms lor (c lsl ofs) in
         List.fold_left add empty universe
 
-      let size ms = ms.size
+      let size ms =
+        H.fold (fun _ (ofs,_,m) size -> size + get ms ofs m) slot 0
 
-      let is_empty ms = ms.size = 0
+      let is_empty ms =
+        ms == 0
 
-      let unknown x = not (H.mem slot x)
+      let unknown x =
+        not (H.mem slot x)
+
+      let occ_ x ms = (* /!\ no check *)
+        let ofs, _, m = H.find slot x in get ms ofs m
 
       let occ x ms =
         if unknown x then invalid_arg "occ: unknown element";
-        let ofs, _, m = H.find slot x in get ms.map ofs m
+        occ_ x ms
 
       let add1 x ms =
         if unknown x then invalid_arg "add1: unknown element";
         let ofs, cap, m = H.find slot x in
-        let v = 1 + (ms.map lsr ofs) land m in
+        let v = 1 + (ms lsr ofs) land m in
         if v > cap then invalid_arg "add1: capacity exceeded";
-        { size = ms.size + 1; map = set ms.map ofs m v }
+        set ms ofs m v
+
+      let add_ x n ms = (* /!\ no check *)
+        let ofs, cap, m = H.find slot x in
+        let v = n + (ms lsr ofs) land m in
+        if v < 0 || v > cap then invalid_arg "add: capacity exceeded";
+        set ms ofs m v
 
       let add x n ms =
         if unknown x then invalid_arg "add: unknown element";
-        let ofs, cap, m = H.find slot x in
-        let v = n + (ms.map lsr ofs) land m in
-        if v < 0 || v > cap then invalid_arg "add: capacity exceeded";
-        { size = ms.size + n; map = set ms.map ofs m v }
+        add_ x n ms
 
       let remove x ms =
         if unknown x then invalid_arg "remove: unknown element";
         let ofs, _, m = H.find slot x in
-        let v = get ms.map ofs m - 1 in
-        if v < 0 then ms else { size = ms.size - 1; map = set ms.map ofs m v }
+        let v = get ms ofs m - 1 in
+        if v < 0 then ms else set ms ofs m v
 
       let clear x ms =
         if unknown x then invalid_arg "clear: unknown element";
         let ofs, _, m = H.find slot x in
-        let v = get ms.map ofs m in
-        { size = ms.size - v; map = ms.map land (lnot (m lsl ofs)) }
+        let v = get ms ofs m in
+        ms land (lnot (m lsl ofs))
 
       (* TODO: could be improved by first looking for the least significant
          1-bit and then find x with a binary search or a lookup table *)
@@ -149,45 +160,51 @@ module Make(X: UNIVERSE) = struct
           | [] -> invalid_arg "min_elt: empty set"
           | (x, _) :: xl ->
               let ofs, _, m = H.find slot x in
-              let v = get ms.map ofs m in
+              let v = get ms ofs m in
               if v > 0 then x else find xl in
         find universe
 
       let iter f ms =
-        List.iter (fun (x, _) -> f x (occ x ms)) universe
+        List.iter (fun (x, _) -> f x (occ_ x ms)) universe
 
       let iter_sub f ms =
-        let rec iter sms = function
-          | [] -> f sms
+        let rec iter s d = function
+          | [] -> f s d
           | (x, _) :: u ->
-              for i = 0 to occ x ms do
-                iter (add x i sms) u
-              done
+              let n = occ_ x ms in
+              for i = 0 to n do iter (add_ x i s) (add_ x (n-i) d) u done
         in
-        iter empty universe
+        iter empty empty universe
 
       let fold_sub f ms acc =
         let rec foldi lo hi f acc =
           if lo > hi then acc else foldi (lo+1) hi f (f lo acc) in
-        let rec fold sms acc = function
-          | [] -> f sms acc
+        let rec fold s d acc = function
+          | []          -> f s d acc
           | (x, _) :: u ->
-              foldi 0 (occ x ms) (fun i acc -> fold (add x i sms) acc u) acc
+              let n = occ_ x ms in
+              foldi 0 n (fun i acc -> fold (add_ x i s) (add_ x (n-i) d) acc u) acc
         in
-        fold empty acc universe
+        fold empty empty acc universe
+
+      let nb_sub ms =
+        let rec count n = function
+          | []          -> n
+          | (x, _) :: u -> count (n * (occ_ x ms + 1)) u in
+        count 1 universe
 
       let inclusion ms1 ms2 =
-        let check (x, _) = occ x ms1 <= occ x ms2 in
+        let check (x, _) = occ_ x ms1 <= occ_ x ms2 in
         List.for_all check universe
 
       let diff ms2 ms1 =
-        let add acc (x, _) =
-          let n1 = occ x ms1 and n2 = occ x ms2 in
+        let build acc (x, _) =
+          let n1 = occ_ x ms1 and n2 = occ_ x ms2 in
           if n1 > n2 then invalid_arg "diff";
-          add x (n2 - n1) acc in
-        List.fold_left add empty universe
+          add_ x (n2 - n1) acc in
+        List.fold_left build empty universe
 
-      let equal : t -> t -> bool = (=)
+      let equal : t -> t -> bool = (==)
       let compare : t -> t -> int = Stdlib.compare
       let hash : t -> int = Hashtbl.hash
 
@@ -195,7 +212,7 @@ module Make(X: UNIVERSE) = struct
         let rec compare = function
           | [] -> 0
           | (x, _) :: xl ->
-              let c = Stdlib.compare (occ x ms1) (occ x ms2) in
+              let c = Stdlib.compare (occ_ x ms1) (occ_ x ms2) in
               if c <> 0 then c else compare xl in
         compare universe
 
@@ -210,7 +227,7 @@ module Make(X: UNIVERSE) = struct
         let open Format in
         fprintf fmt "@[<hov 2>";
         if debug then (
-          fprintf fmt "%a " print_binary ms.map;
+          fprintf fmt "%a " print_binary ms;
           H.iter (fun c (ofs,_,_) -> fprintf fmt "%a:%d " pp c ofs) slot;
         );
         fprintf fmt "{ ";

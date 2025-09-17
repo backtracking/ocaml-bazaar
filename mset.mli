@@ -85,11 +85,18 @@ module type S = sig
         iteration includes elements for which the multiplicity is
         zero. *)
 
-  val iter_sub: (t -> unit) -> t -> unit
-    (** Iterates over all the sub-multisets of the given multiset. *)
+  val iter_sub: (t -> t -> unit) -> t -> unit
+    (** [iter_sub f ms] iterates [f] over all the sub-multisets of [ms].
+        For each sub-multiset [x], function [f] is applied to [x] and
+        [diff ms x]. *)
 
-  val fold_sub: (t -> 'a -> 'a) -> t -> 'a -> 'a
-    (** Folds over all the sub-multisets of the given multiset. *)
+  val fold_sub: (t -> t -> 'a -> 'a) -> t -> 'a -> 'a
+    (** [fold_sub f ms] folds [f] over all the sub-multisets of [ms].
+        For each sub-multiset [x], function [f] is applied to [x] and
+        [diff ms x]. *)
+
+  val nb_sub: t -> int
+    (** Total number of sub-multisets *)
 
   val equal: t -> t -> bool
   val compare: t -> t -> int

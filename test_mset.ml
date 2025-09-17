@@ -11,6 +11,8 @@ let () =
   assert (occ 'a' full = 3);
   assert (occ 'b' full = 1);
   assert (occ 'c' full = 2);
+  assert (nb_sub full = 24);
+  assert (nb_sub empty = 1);
   let ms = empty in
   assert (size ms = 0);
   let ms = add1 'a' ms in
@@ -45,11 +47,11 @@ let () =
   assert (size ms = 6);
   let nss = ref 0 in
   Format.printf "@[<hov 2>subsets:";
-  let print ms = incr nss;
+  let print ms _ = incr nss;
     Format.printf " {%a}" (print_compact Format.pp_print_char) ms in
   iter_sub print full; Format.printf "@]@.";
   assert (Int64.of_int !nss = Internals.number_of_multisets);
-  let n = fold_sub (fun _ n -> n+1) full 0 in
+  let n = fold_sub (fun _ _ n -> n+1) full 0 in
   assert (Int64.of_int n = Internals.number_of_multisets);
   ()
 
@@ -73,7 +75,9 @@ let test xl =
     else removex (n-1, remove x ms) (x, c-1) in
   let _, ms = List.fold_left removex (n,ms) xl in
   assert (size ms = 0);
-  let n = fold_sub (fun _ n -> n+1) full 0 in
+  iter_sub (fun ms d -> assert (inclusion ms full); assert (inclusion d full))
+    full;
+  let n = fold_sub (fun _ _ n -> n+1) full 0 in
   assert (Int64.of_int n = Internals.number_of_multisets)
 
 let () = ignore (chars ['a', max_int])
