@@ -61,6 +61,10 @@ let dict : dictionary =
   dict
 
 let () = assert (not (Hms.mem dict Ms.empty))
+let print_ms_words fmt ms =
+  let _, wl = Hms.find dict ms in
+  let pp_sep fmt () = fprintf fmt "|" in
+  fprintf fmt "{@[%a@]}" (pp_print_list ~pp_sep pp_print_string) wl
 
 module M = Map.Make(Ms)
 
@@ -147,8 +151,8 @@ let count msl =
 let () =
   let total = ref Z.zero in
   printf "explore:@.";
-  let print1 fmt (n, ms) = fprintf fmt "%d{@[%a@]}" n print_ms ms in
-  let print1 fmt ms = fprintf fmt "%a" print_ms ms in
+  (* let print1 fmt (n, ms) = fprintf fmt "%d{@[%a@]}" n print_ms ms in *)
+  let print1 fmt ms = fprintf fmt "%a" print_ms_words ms in
   let print msl =
     let n = count msl in
     total := Z.add !total n;
