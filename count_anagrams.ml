@@ -4,6 +4,7 @@
 open Format
 
 let debug = ref false
+let show = ref false
 
 let dictfile, sentence =
   let dict = ref "" in
@@ -11,6 +12,7 @@ let dictfile, sentence =
   let usage_msg = "anagrams [-d] <dict file> <sentence>" in
   let speclist =
     [ "-d", Arg.Set debug, "debug mode";
+      "-s", Arg.Set show, "show mode";
     ] in
   let anon_fun s = match !dict, !sent with
     | "", _ when Sys.file_exists s -> dict := s
@@ -66,14 +68,12 @@ let print_ms_words fmt ms =
   let pp_sep fmt () = fprintf fmt "|" in
   fprintf fmt "{@[%a@]}" (pp_print_list ~pp_sep pp_print_string) wl
 
-module M = Map.Make(Ms)
-
 (* fold over the subsets of `ms` in `dict` *)
 let fold_sub_dict f ms acc =
   if Hms.length dict < Ms.nb_sub ms then
     let f ms' _ acc = if Ms.is_empty ms' then acc else
-      try let d = Ms.diff ms ms' in f ms' d acc
-      with Invalid_argument _ -> acc in
+      if Ms.inclusion ms' ms then f ms' (Ms.diff_no_check ms ms') acc
+      else acc in
     Hms.fold f dict acc
   else
     let f ms' d acc =
@@ -81,23 +81,27 @@ let fold_sub_dict f ms acc =
         f ms' d acc else acc in
     Ms.fold_sub f ms acc
 
-(* TODO the branch x --y--> z=x\y is useless when z<y *)
-let branches : ms M.t option Hms.t =
+let branches : ms array option Hms.t =
   let branches = Hms.create (1 lsl Ms.Internals.bit_size) in
-  Hms.add branches Ms.empty (Some M.empty);
+  Hms.add branches Ms.empty (Some [||]);
   let nodes = ref 0 in
-  let rec build ms = try Hms.find branches ms with Not_found ->
+  let rec build ms =
+    try Hms.find branches ms with Not_found ->
     let b = compute ms in
     if b <> None then incr nodes;
     Hms.add branches ms b; b
   and compute ms =
-    let add ms' d br = match build d with
-      (* | Some _ -> M.add ms' d br *)
-      | Some _ when d = Ms.empty || d >= ms' -> M.add ms' d br
+    let add ms' d br =
+      if d = Ms.empty || d >= ms' then match build d with
+      (* the branch ms --ms'--> d=ms\ms' is useless when d<ms' *)
+      | Some _ -> ms' :: br
       | _ -> br
+      else br
     in
-    let br = fold_sub_dict add ms M.empty in
-    if M.is_empty br then None else Some br
+    let br = fold_sub_dict add ms [] in
+    if br = [] then None else Some (
+      let a = Array.of_list br in
+      Array.sort Ms.compare a; a)
   in
   ignore (build Ms.full);
   printf "%d multisets in the tree@." (Hms.length branches);
@@ -105,29 +109,31 @@ let branches : ms M.t option Hms.t =
   let print ms br =
     printf "  @[<hov 2>%a =>" print_ms ms;
     (match br with None -> printf " none"
-    | Some m -> let print ms' _ = printf " %a" print_ms ms' in M.iter print m);
+    | Some m -> let print ms' = printf " %a" print_ms ms' in Array.iter print m);
     printf "@]@." in
   if !debug then Hms.iter print branches;
   branches
 
-(* naive exploration, for debugging purposes
-   prints all increasing sequences of multisets *)
+(* explore all increasing sequences of multisets *)
 let naive f ms =
   let rec explore acc inf ms =
-    (* printf "explore %a@." print_ms ms; *)
     if Ms.is_empty ms then f acc else
     match Hms.find branches ms with
-    | Some br -> M.iter (branch acc inf) br
-    | None -> assert false
+    | Some br -> branch acc inf ms br (Array.length br - 1)
+    | None -> ()
     | exception Not_found -> assert false
-  and branch acc inf w ms' =
-    (* printf "  branch %a@." print_ms w; *)
-    if inf <= w then explore (w :: acc) w ms'
+  and branch acc inf ms br i =
+    if i >= 0 then
+      let w = br.(i) in
+      if w >= inf then (
+        explore (w :: acc) w (Ms.diff_no_check ms w);
+        branch acc inf ms br (i-1)
+      )
   in
   explore [] Ms.empty ms
 
 (* TODO memo *)
-(* TODO do no scan all the map, but only the part that is >= w *)
+(* TODO do no scan all the map, but only the part that is >= inf *)
 (* TODO clean french-up.txt? *)
 
 let count msl =
@@ -149,17 +155,19 @@ let count msl =
   | x :: msl -> uniq ([], Z.one) x 1 msl
 
 let () =
+  let distinct = ref 0 in
   let total = ref Z.zero in
   printf "explore:@.";
-  (* let print1 fmt (n, ms) = fprintf fmt "%d{@[%a@]}" n print_ms ms in *)
   let print1 fmt ms = fprintf fmt "%a" print_ms_words ms in
   let print msl =
+    incr distinct;
     let n = count msl in
     total := Z.add !total n;
-    if !debug then
+    if !debug || !show && List.length msl < 4 then
     printf "=> @[%a@] (%a)@."
       (pp_print_list ~pp_sep:pp_print_space print1) msl Z.pp_print n in
   naive print Ms.full;
+  printf "distinct paths = %d@." !distinct;
   printf "grand total = %a@." Z.pp_print !total
 
 (*
