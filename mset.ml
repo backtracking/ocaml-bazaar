@@ -14,6 +14,7 @@ module type S = sig
   val min_elt: t -> elt
   val inclusion: t -> t -> bool
   val diff: t -> t -> t
+  val diff_no_check: t -> t -> t
   val iter: (elt -> int -> unit) -> t -> unit
   val iter_sub: (t -> t -> unit) -> t -> unit
   val fold_sub: (t -> t -> 'a -> 'a) -> t -> 'a -> 'a
@@ -179,13 +180,13 @@ module Make(X: UNIVERSE) = struct
       let fold_sub f ms acc =
         let rec foldi lo hi f acc =
           if lo > hi then acc else foldi (lo+1) hi f (f lo acc) in
-        let rec fold s d acc = function
-          | []          -> f s d acc
+        let rec fold s acc = function
+          | []          -> f s (ms-s) acc
           | (x, _) :: u ->
               let n = occ_ x ms in
-              foldi 0 n (fun i acc -> fold (add_ x i s) (add_ x (n-i) d) acc u) acc
+              foldi 0 n (fun i acc -> fold (add_ x i s) acc u) acc
         in
-        fold empty empty acc universe
+        fold empty acc universe
 
       let nb_sub ms =
         let rec count n = function
@@ -203,6 +204,8 @@ module Make(X: UNIVERSE) = struct
           if n1 > n2 then invalid_arg "diff";
           add_ x (n2 - n1) acc in
         List.fold_left build empty universe
+
+      let diff_no_check ms2 ms1 = ms2 - ms1
 
       let equal : t -> t -> bool = (==)
       let compare : t -> t -> int = Stdlib.compare

@@ -72,11 +72,15 @@ module type S = sig
         multiplicity in [ms2]. *)
 
   val diff: t -> t -> t
-    (** [diff ms2 ms1] compute the difference of the multiset [ms2]
+    (** [diff ms2 ms1] computes the difference of the multiset [ms2]
         and the multiset [ms1] i.e. for any element from the universe,
         the difference from its multiplicity in [ms2] and its
         multiplicity in [ms1]. Raises [Invalid_argument] if [ms1] is
         not included in [ms2]. *)
+
+  val diff_no_check: t -> t -> t
+    (** [diff ms2 ms1] computes the difference of the multiset [ms2]
+        and the multiset [ms1] assuming that [ms1] is included in [ms2]. *)
 
   val iter: (elt -> int -> unit) -> t -> unit
     (** Iterates over all the elements of the universe, in ascending
