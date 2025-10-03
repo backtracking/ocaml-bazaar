@@ -28,12 +28,12 @@ module BST = struct
      have to pass the whole value of type `bst` and match again. Too bad. *)
   let leftp = function
     | E   -> assert false
-    | N r -> of_funs (fun () -> r.left) (fun v -> r.left <- v)
+    | N r -> create (fun () -> r.left) (fun v -> r.left <- v)
 
   (* A pointer to the right field. *)
   let rightp = function
     | E   -> assert false
-    | N r -> of_funs (fun () -> r.right) (fun v -> r.right <- v)
+    | N r -> create (fun () -> r.right) (fun v -> r.right <- v)
 
   let empty () =
     ref E
@@ -85,7 +85,7 @@ module Linus = struct
 
   let next_pointer = function
     | Nil    -> assert false
-    | Cons r -> of_funs (fun () -> r.next) (fun v -> r.next <- v)
+    | Cons r -> create (fun () -> r.next) (fun v -> r.next <- v)
 
   let next = function
     | Nil    -> assert false

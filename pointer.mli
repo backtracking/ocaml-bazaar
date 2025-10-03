@@ -20,6 +20,8 @@
 
 type 'a pointer
 
+val create: (unit -> 'a) -> ('a -> unit) -> 'a pointer
+
 val read: 'a pointer -> 'a
 
 val write: 'a pointer -> 'a -> unit
@@ -28,4 +30,8 @@ val of_ref: 'a ref -> 'a pointer
 
 val of_array: 'a array -> int -> 'a pointer
 
-val of_funs: (unit -> 'a) -> ('a -> unit) -> 'a pointer
+val of_bytes: bytes -> int -> char pointer
+
+val invalidate: 'a pointer -> unit
+
+val swap: 'a pointer -> 'a pointer -> unit
