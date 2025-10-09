@@ -40,6 +40,10 @@ module type S = sig
     (** returns true if and only if the multiset is empty; this is equivalent
         to checking that the [size] is zero. *)
 
+  val is_full: t -> bool
+    (** returns true if and only if the multiset is full (the multiplicity
+        of each element is maximal). *)
+
   val occ: elt -> t -> int
     (** returns the mutiplicity of an element (and 0 if the element
         does not belong to the multiset) *)
@@ -53,7 +57,7 @@ module type S = sig
     (** [add x n ms] adds [n] occurrences of element [x] to the
         multiset [ms] (or subtract from it if [n] is negative) *)
 
-  val remove: elt -> t -> t
+  val remove1: elt -> t -> t
     (** removes one occurrence of an element (and does nothing if the
         element does not belong to the multiset) *)
 
@@ -79,8 +83,25 @@ module type S = sig
         not included in [ms2]. *)
 
   val diff_no_check: t -> t -> t
-    (** [diff ms2 ms1] computes the difference of the multiset [ms2]
-        and the multiset [ms1] assuming that [ms1] is included in [ms2]. *)
+    (** [diff_no_check ms2 ms1] computes the difference of the multiset [ms2]
+        and the multiset [ms1] assuming that [ms1] is included in [ms2].
+        This is a programming error to use this function when [ms1]
+        is not included in [ms2], and the result is not even guaranteed
+        to be a valid multiset. *)
+
+  val union: t -> t -> t
+    (** [union ms1 ms2] computes the union of the multisets [ms1] and
+        [ms2] i.e. for any element from the universe,
+        the sum from its multiplicity in [ms1] and its
+        multiplicity in [ms2]. Raises [Invalid_argument] if the
+        capacity is exceeded. *)
+
+  val union_no_check: t -> t -> t
+    (** [union_no_check ms1 ms2] computes the union of the multiset
+        [ms1] and the multiset [ms2] assuming no capacity overflow.
+        This is a programming error to use this function when the
+        union exceeds the capacity, and the result is not even
+        guaranteed to be a valid multiset. *)
 
   val iter: (elt -> int -> unit) -> t -> unit
     (** Iterates over all the elements of the universe, in ascending
@@ -142,10 +163,17 @@ module type S = sig
     (** the total number of bits used in the internal representation *)
 
     val number_of_multisets: int64
-    (** the total number of distinct sub-multisets (usigned int64) *)
+    (** the total number of distinct sub-multisets (unsigned int64) *)
 
     val dump: unit -> unit
     (** prints the above information on standard output *)
+
+    val dump_table: (Format.formatter -> elt -> unit) -> unit
+    (** prints the internal mapping table on standard output *)
+
+    val print_binary: Format.formatter -> t -> unit
+    (** prints the bits of a multiset, with most significant bits first
+        and using exactly [bit_size] bits. *)
   end
 
 end

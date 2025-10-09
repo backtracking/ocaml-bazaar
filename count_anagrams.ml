@@ -30,7 +30,8 @@ let print_ms = Ms.print_compact pp_print_char
 let () =
   printf "s = %S@." sentence;
   printf "ms = %a@." print_ms Ms.full;
-  Ms.Internals.dump ()
+  Ms.Internals.dump ();
+  Ms.Internals.dump_table pp_print_char
 
 module Hms : Hashtbl.S with type key = ms = Hashtbl.Make(Ms)
 type words = int * string list
@@ -46,7 +47,7 @@ let print_list =
 let dict : dictionary =
   let dict = Hms.create 65536 in
   let nwords = ref 0 in
-  let add () s =
+  let add () s = if s <> "" then
     let s = String.lowercase_ascii s in
     match ms_of_string s with
     | ms ->

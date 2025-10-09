@@ -6,15 +6,18 @@ module type S = sig
   val full: t
   val size: t -> int
   val is_empty: t -> bool
+  val is_full: t -> bool
   val occ: elt -> t -> int
   val add1: elt -> t -> t
   val add: elt -> int -> t -> t
-  val remove: elt -> t -> t
+  val remove1: elt -> t -> t
   val clear: elt -> t -> t
   val min_elt: t -> elt
   val inclusion: t -> t -> bool
   val diff: t -> t -> t
   val diff_no_check: t -> t -> t
+  val union: t -> t -> t
+  val union_no_check: t -> t -> t
   val iter: (elt -> int -> unit) -> t -> unit
   val iter_sub: (t -> t -> unit) -> t -> unit
   val fold_sub: (t -> t -> 'a -> 'a) -> t -> 'a -> 'a
@@ -32,6 +35,8 @@ module type S = sig
     val bit_size: int
     val number_of_multisets: int64
     val dump: unit -> unit
+    val dump_table: (Format.formatter -> elt -> unit) -> unit
+    val print_binary: Format.formatter -> t -> unit
   end
 end
 
@@ -79,7 +84,7 @@ module Make(X: UNIVERSE) = struct
     let module H = Hashtbl.Make(X) in
     (* table `slot` maps each elt to a triple (offset, capacity, mask)
        where `mask = 2^k-1` with `k` the number of bits *)
-    let slot = H.create 64 in
+    let slot : (int * int * int) H.t = H.create 64 in
     let next_ofs = ref 0 in
     let assign (x, cap) =
       if H.mem slot x then invalid_arg "create: duplicate element";
@@ -115,6 +120,9 @@ module Make(X: UNIVERSE) = struct
       let is_empty ms =
         ms == 0
 
+      let is_full ms =
+        ms == full
+
       let unknown x =
         not (H.mem slot x)
 
@@ -142,8 +150,8 @@ module Make(X: UNIVERSE) = struct
         if unknown x then invalid_arg "add: unknown element";
         add_ x n ms
 
-      let remove x ms =
-        if unknown x then invalid_arg "remove: unknown element";
+      let remove1 x ms =
+        if unknown x then invalid_arg "remove1: unknown element";
         let ofs, _, m = H.find slot x in
         let v = get ms ofs m - 1 in
         if v < 0 then ms else set ms ofs m v
@@ -199,13 +207,15 @@ module Make(X: UNIVERSE) = struct
         List.for_all check universe
 
       let diff ms2 ms1 =
-        let build acc (x, _) =
-          let n1 = occ_ x ms1 and n2 = occ_ x ms2 in
-          if n1 > n2 then invalid_arg "diff";
-          add_ x (n2 - n1) acc in
-        List.fold_left build empty universe
+        if inclusion ms1 ms2 then ms2 - ms1 else invalid_arg "diff"
 
       let diff_no_check ms2 ms1 = ms2 - ms1
+
+      let union ms1 ms2 =
+        let check (x, cap) = occ_ x ms1 + occ_ x ms2 <= cap in
+        if List.for_all check universe then ms1 + ms2 else invalid_arg "union"
+
+      let union_no_check ms1 ms2 = ms1 + ms2
 
       let equal : t -> t -> bool = (==)
       let compare : t -> t -> int = Stdlib.compare
@@ -267,6 +277,22 @@ module Make(X: UNIVERSE) = struct
         let dump () =
           Format.printf "bit size = %d@." bit_size;
           Format.printf "%Lu multisets@." number_of_multisets
+        let dump_table pp =
+          let print (x, _) =
+            let (ofs,cap,mask) = H.find slot x in
+            Format.printf "%a(ofs:%d, mask:%d, cap:%d)@ " pp x ofs mask cap
+          in
+          Format.printf "@[<hov 2>";
+          List.iter print universe;
+          Format.printf "@]@."
+        let print_binary fmt ms =
+          let b = Bytes.create bit_size in
+          let rec loop i ms =
+            if i < 0 then Format.fprintf fmt "%s" (Bytes.to_string b) else (
+            Bytes.set b i (if ms land 1 = 0 then '0' else '1');
+            loop (i - 1) (ms lsr 1)
+            ) in
+          loop (bit_size - 1) ms
       end
 
     end in
