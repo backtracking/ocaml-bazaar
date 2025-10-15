@@ -124,15 +124,15 @@ module type S = sig
     (** Total number of sub-multisets *)
 
   val equal: t -> t -> bool
-  val compare: t -> t -> int
+
   val hash: t -> int
 
-  val lex_compare: t -> t -> int
-    (** Lexicographic comparison of multisets.
+  val compare: t -> t -> int
+    (** This is a total order over multisets.
 
-        Note: The polymorphic function [Stdlib.compare] can also be
-        used on type [t]. It is a total order, but not the
-        lexicographic one. *)
+        This implements multiset ordering if we consider the elements
+        being ordered according to the list given to function [create]
+        below. *)
 
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
     (** Prints a multiset in the following format:
@@ -182,7 +182,6 @@ module type UNIVERSE = sig
   type t
   val hash: t -> int
   val equal: t -> t -> bool
-  val compare: t -> t -> int
 end
 
 module Make(X: UNIVERSE) : sig

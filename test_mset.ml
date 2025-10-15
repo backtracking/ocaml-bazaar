@@ -53,6 +53,27 @@ let () =
   assert (Int64.of_int !nss = Internals.number_of_multisets);
   let n = fold_sub (fun _ _ n -> n+1) full 0 in
   assert (Int64.of_int n = Internals.number_of_multisets);
+  (* comparison *)
+  let of_string s = String.fold_right add1 s empty in
+  let cmp x y = compare (of_string x) (of_string y) in
+  assert (cmp "aab" "aab" = 0);
+  assert (cmp "aab" "ac" < 0);
+  assert (cmp "aaabc" "aaabcc" < 0);
+  assert (cmp "" "abc" < 0);
+  assert (cmp "aaabc" "abcc" < 0);
+  assert (cmp "bc" "aaacc" < 0);
+  assert (cmp "aaabc" "ac" > 0);
+  assert (cmp "aaabc" "abc" > 0);
+  (* inclusion *)
+  let incl x y = assert (inclusion (of_string x) (of_string y)) in
+  incl "" "";
+  incl "" "a";
+  incl "a" "a";
+  incl "a" "ab";
+  incl "aa" "aaab";
+  incl "b" "abc";
+  incl "b" "abc";
+  incl "abc" "aabcc";
   ()
 
 let test xl =

@@ -23,9 +23,8 @@ module type S = sig
   val fold_sub: (t -> t -> 'a -> 'a) -> t -> 'a -> 'a
   val nb_sub: t -> int
   val equal: t -> t -> bool
-  val compare: t -> t -> int
   val hash: t -> int
-  val lex_compare: t -> t -> int
+  val compare: t -> t -> int
   val print: (Format.formatter -> elt -> unit) -> Format.formatter -> t -> unit
   val print_nat: (Format.formatter -> elt -> unit) ->
                  Format.formatter -> t -> unit
@@ -44,7 +43,6 @@ module type UNIVERSE = sig
   type t
   val hash: t -> int
   val equal: t -> t -> bool
-  val compare: t -> t -> int
 end
 
 (* Principle:
@@ -78,9 +76,7 @@ let ceillog2 n =
 
 module Make(X: UNIVERSE) = struct
 
-  let create (xl: (X.t * int) list) =
-    let cmp (x1,_) (x2,_) = X.compare x1 x2 in
-    let universe = List.sort cmp xl in
+  let create (universe: (X.t * int) list) =
     let module H = Hashtbl.Make(X) in
     (* table `slot` maps each elt to a triple (offset, capacity, mask)
        where `mask = 2^k-1` with `k` the number of bits *)
@@ -203,6 +199,7 @@ module Make(X: UNIVERSE) = struct
         count 1 universe
 
       let inclusion ms1 ms2 =
+        ms1 <= ms2 && (* fast check *)
         let check (x, _) = occ_ x ms1 <= occ_ x ms2 in
         List.for_all check universe
 
@@ -220,14 +217,6 @@ module Make(X: UNIVERSE) = struct
       let equal : t -> t -> bool = (==)
       let compare : t -> t -> int = Stdlib.compare
       let hash : t -> int = Hashtbl.hash
-
-      let lex_compare ms1 ms2 =
-        let rec compare = function
-          | [] -> 0
-          | (x, _) :: xl ->
-              let c = Stdlib.compare (occ_ x ms1) (occ_ x ms2) in
-              if c <> 0 then c else compare xl in
-        compare universe
 
       let rec print_binary fmt = function
         | 0 -> Format.fprintf fmt "0"
@@ -314,7 +303,9 @@ let of_string ?(filter=default_filter) s =
     with Not_found -> Hashtbl.add h c 1 in
   let add c = match filter c with | None -> () | Some c -> add c in
   String.iter add s;
-  chars (Hashtbl.fold (fun c n acc -> (c, n) :: acc) h [])
+  let letters = Hashtbl.fold (fun c n acc -> (c, n) :: acc) h [] in
+  let cmp (c1,_) (c2,_) = Char.compare c1 c2 in
+  chars (List.sort cmp letters)
 
 (* Source:
    https://fr.wikipedia.org/wiki/Fr%C3%A9quence_d%27apparition_des_lettres *)
