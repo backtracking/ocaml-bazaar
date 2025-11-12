@@ -20,5 +20,14 @@ val fix:  int -> ((int -> 'a) -> int -> 'a) -> 'a array
 val shuffle: 'a array -> unit
   (** Shuffle an array using Knuth's suffle. *)
 
+val sampling: int -> 'a array -> 'a array
+  (** [sampling k a] returns a random subset of [k] elements from array [a].
+      The relative order of the selected elements is *not* preserved.
+      Raises [Invalid_argument] if [k < 0] or [k > Array.length a]. *)
+
 val inverse_in_place: int array -> unit
   (** inverse a permutation, in place *)
+
+val print:
+  (Format.formatter -> 'a -> unit) ->
+  Format.formatter -> 'a array-> unit

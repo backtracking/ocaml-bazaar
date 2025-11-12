@@ -33,10 +33,22 @@ let shuffle a =
   let swap i j = let t = a.(i) in a.(i) <- a.(j); a.(j) <- t in
   for k = 1 to n - 1 do swap (Random.int (k + 1)) k done
 
+let sampling (k: int) (a: 'a array) : 'a array =
+  if k < 0 || k > Array.length a then invalid_arg "sampling";
+  let r = Array.sub a 0 k in
+  for i = k to Array.length a - 1 do
+    let j = Random.int (i + 1) in
+    if j < k then r.(j) <- a.(i)
+  done;
+  r
+
 (*
   Inverse of a permutation, in place
     Algorithm I
     The Art of Computer Programming, volume 1, Sec. 1.3.3, page 176
+
+  Note: Strictly speaking, this is not in place, as we are using one bit
+  per element (via `lnot`).
 *)
 
 let inverse_in_place a =
@@ -58,3 +70,9 @@ let inverse_in_place a =
     end;
     a.(m) <- lnot !i
   done
+
+let print print fmt a =
+  let open Format in
+  fprintf fmt "[|@[ ";
+  Array.iter (fun x -> fprintf fmt "%a;@ " print x) a;
+  fprintf fmt " @]|]"
