@@ -1,7 +1,7 @@
 
 (* Gosper's Hack
 
-   Iterates over all n-bit words with k bits sets, in lexicographic
+   Iterates over all n-bit words with k bits set, in lexicographic
    order and in linear time, with O(1) cheap operations to move from
    one word to the next.
 
