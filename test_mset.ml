@@ -61,6 +61,8 @@ let () =
   assert (cmp "aaabc" "aaabcc" < 0);
   assert (cmp "" "abc" < 0);
   assert (cmp "aaabc" "abcc" < 0);
+  assert (cmp "abcc" "aabcc" < 0);
+  assert (cmp "bcc" "aabcc" < 0);
   assert (cmp "bc" "aaacc" < 0);
   assert (cmp "aaabc" "ac" > 0);
   assert (cmp "aaabc" "abc" > 0);
@@ -75,6 +77,19 @@ let () =
   incl "b" "abc";
   incl "abc" "aabcc";
   ()
+
+let () =
+  let module M = (val chars ['a', 2; 'b', 2; 'c', 2; 'd', 2; 'e', 2]) in
+  let open M in
+  let of_string s = String.fold_right add1 s empty in
+  let cmp x y = compare (of_string x) (of_string y) in
+  assert (cmp "aab" "ac" < 0);
+  assert (cmp "abbdd" "abbce" < 0);
+  assert (cmp "aabbdd" "abbce" < 0);
+  assert (cmp "aabdd" "abbce" < 0);
+  assert (cmp "aacc" "bd" < 0);
+  assert (cmp "aabcc" "bd" < 0);
+  assert (cmp "aabbcc" "bd" < 0)
 
 let test xl =
   let module M = (val chars xl) in
