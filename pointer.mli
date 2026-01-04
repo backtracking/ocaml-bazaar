@@ -1,7 +1,7 @@
 
 (** Pointers
 
-  The purpose of this module is to give a uniform type to the various
+  The purpose of this module is to provide a uniform type for the various
   kinds of ``pointers'' we can have in OCaml:
   - a reference,
   - a pointer to an array cell,
@@ -14,8 +14,7 @@
 
   where `r` is the record and `f` is the field name.
 
-  See [this file](./test_pointer.ml) for an example involving mutable trees.
-
+  See [this file](./test_pointer.ml) for examples.
 *)
 
 type 'a pointer

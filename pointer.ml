@@ -1,7 +1,7 @@
 
 type 'a pointer = {
-   mutable read: unit -> 'a;
-   mutable write: 'a -> unit;
+  mutable  read: unit -> 'a;
+  mutable write: 'a -> unit;
 }
 
 let create read write =
@@ -14,14 +14,16 @@ let write p v =
   p.write v
 
 let of_ref r =
-  { read  = (fun () -> !r);
-    write = (fun v -> r := v); }
+  { read  = (fun () -> !r    );
+    write = (fun v  -> r := v); }
 
 let of_array a i =
-  { read  = (fun () -> a.(i));
-    write = (fun v -> a.(i) <- v); }
+  if i < 0 || i >= Array.length a then invalid_arg "of_array";
+  { read  = (fun () -> a.(i)     );
+    write = (fun v  -> a.(i) <- v); }
 
 let of_bytes b i =
+  if i < 0 || i >= Bytes.length b then invalid_arg "of_bytes";
   { read  = (fun () -> Bytes.get b i);
     write = Bytes.set b i; }
 
