@@ -29,19 +29,33 @@ end = struct
 
   type elt = X.t
 
-(*     head
-  maxl |.|
-       |.|
-  init |o--------------->|.|
-       |o--------------->|.|
-       |o--->|o--------->|.|
-       |o--->|o--------->|o--->|o--------->|.|
-     0 |o--->|o--->|o--->|o--->|o--->|o--->|o--->|.|
-             |1|   |3|   |4|   |6|   |7|   |8|   |9|   <- sorted
-  size=6    node  node  node  node  node  node  node
+(* Example with size=7 elements (a<b<c<d<e<f<g), maxl=6, and
+   (currently) init=4.  Element a is at level 2, element b at level 0,
+   element c at level 4, etc.
+
+      head
+       +-+
+maxl=6 |.|
+       +-+
+     5 |.|
+       +-+               +-+
+init=4 |o--------------->|.|
+       +-+               +-+
+     3 |o--------------->|.|
+       +-+   +-+         +-+
+     2 |o--->|o--------->|.|
+       +-+   +-+         +-+   +-+         +-+
+     1 |o--->|o--------->|o--->|o--------->|.|
+       +-+   +-+   +-+   +-+   +-+   +-+   +-+   +-+
+     0 |o--->|o--->|o--->|o--->|o--->|o--->|o--->|.|   <- full
+       +-+   +-+   +-+   +-+   +-+   +-+   +-+   +-+
+             |a|   |b|   |c|   |d|   |e|   |f|   |g|   <- values, sorted
+             +-+   +-+   +-+   +-+   +-+   +-+   +-+
+            node  node  node  node  node  node  node
 
     invariants:
-    - level 0 is a singly-linked list of all the elements, and is sorted
+    - at each level, `head` contains a valid singly linked-list, sorted
+    - level 0 contains all the elements
     - all pointers in `head[init+1..]` are `None`
     - all `next` arrays have a size <= init + 1
 *)
@@ -66,11 +80,6 @@ end = struct
   let size s =
     s.size
 
-  let random_level maxl prob =
-    let rec loop lvl =
-      if lvl = maxl || Random.float 1.0 < prob then lvl else loop (lvl + 1) in
-    loop 0
-
   let mem s x =
     let rec find lvl prev a = match a.(lvl) with
       | Some n when X.compare x n.elt >= 0 ->
@@ -82,6 +91,12 @@ end = struct
           (* otherwise lvl=0 and we stop, with prev <= x < next *)
           match prev with None -> false | Some y -> X.compare x y = 0 in
     find s.init None s.head
+
+  (* a newly inserted element is inserted at a random level *)
+  let random_level maxl prob =
+    let rec loop lvl =
+      if lvl = maxl || Random.float 1.0 < prob then lvl else loop (lvl + 1) in
+    loop 0
 
   exception Already
 
