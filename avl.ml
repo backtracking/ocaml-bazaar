@@ -16,8 +16,8 @@ end) : sig
   type t
 
   val create: unit -> t
-  val mem: elt -> t -> bool
-  val add: elt -> t -> unit
+  val mem: t -> elt -> bool
+  val add: t -> elt -> unit
   val size: t -> int
 
   val check: t -> unit
@@ -124,10 +124,10 @@ end = struct
   let size s =
     s.size
 
-  let mem x s =
+  let mem s x =
     mem_ x s.root
 
-  let add x s =
+  let add s x =
     try s.root <- add_ x s.root; s.size <- 1 + s.size
     with Already -> ()
 

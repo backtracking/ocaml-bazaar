@@ -380,6 +380,14 @@
  (name skew_heap)
  (modules skew_heap))
 
+(library
+ (name skip_list)
+ (modules skip_list))
+(test
+ (name test_skip_list)
+ (modules test_skip_list)
+ (libraries arrays skip_list))
+
 (executable
  (name snake)
  (promote (until-clean))
