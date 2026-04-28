@@ -17,6 +17,14 @@
  (libraries arrays))
 
 (library
+ (name avl)
+ (modules avl))
+(test
+ (name test_avl)
+ (modules test_avl)
+ (libraries arrays avl))
+
+(library
  (name bintree)
  (modules bintree))
 (test
@@ -155,7 +163,7 @@
 (test
  (name test_hd)
  (modules test_hd)
- (libraries hd))
+ (libraries time hd))
 
 (library
  (name idd)
@@ -244,14 +252,6 @@
  (promote (until-clean))
  (modules morris)
  (libraries unix))
-
-(library
- (name mset)
- (modules mset))
-(test
- (name test_mset)
- (modules test_mset)
- (libraries mset))
 
 (executable
  (name nerdle)

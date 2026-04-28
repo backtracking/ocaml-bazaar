@@ -4,7 +4,21 @@
 (* greatest power of 2 less than or equal to x (Chapter 3) *)
 let rec flp2 x = let y = x land (x-1) in if y = 0 then x else flp2 y
 
-(* population count (Chapter 5) *)
+(* population count (Chapter 5)
+
+   Note: a tabulated implementation (see for instance in file bitset.ml)
+   is roughly three times faster, which is a bit disappointing... *)
+let pop8 x =
+  let x = (x land 0x55) + ((x lsr 1) land 0x55) in
+  let x = (x land 0x33) + ((x lsr 2) land 0x33) in
+  (x + (x lsr 4)) land 0xF
+
+let pop16 x =
+  let x = (x land 0x5555) + ((x lsr 1) land 0x5555) in
+  let x = (x land 0x3333) + ((x lsr 2) land 0x3333) in
+  let x = (x + (x lsr 4)) land 0x0F0F in
+  (x + (x lsr 8)) land 0xFF
+
 let pop x =
   let x = x - ((x lsr 1) land 0x5555_5555_5555_5555) in
   let x = ( x        land 0x3333_3333_3333_3333)
