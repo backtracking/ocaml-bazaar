@@ -6,12 +6,6 @@
     Communications of the ACM, Volume 33, Issue 6, 1990
     https://doi.org/10.1145/78973.78977
 
-       +-+
-  maxl | |
-       | |
-  init |o------------>| |
-
-
 *)
 
 module Make(X: sig
@@ -35,6 +29,23 @@ end = struct
 
   type elt = X.t
 
+(*     head
+  maxl |.|
+       |.|
+  init |o--------------->|.|
+       |o--------------->|.|
+       |o--->|o--------->|.|
+       |o--->|o--------->|o--->|o--------->|.|
+     0 |o--->|o--->|o--->|o--->|o--->|o--->|o--->|.|
+             |1|   |3|   |4|   |6|   |7|   |8|   |9|   <- sorted
+  size=6    node  node  node  node  node  node  node
+
+    invariants:
+    - level 0 is a singly-linked list of all the elements, and is sorted
+    - all pointers in `head[init+1..]` are `None`
+    - all `next` arrays have a size <= init + 1
+*)
+
   type pointer = node option
   and  node    = {  elt: elt;
                    next: pointer array; (* len >= 1 *) }
@@ -42,7 +53,7 @@ end = struct
   type t = { prob: float;
              maxl: int;
      mutable init: int;
-             head: pointer array; (* len >= 1 *)
+             head: pointer array; (* len = maxl *)
      mutable size: int; }
 
   let create ?(prob=0.5) ?(max_level=30) () =
@@ -84,7 +95,7 @@ end = struct
              | Some y -> if X.compare x y = 0 then raise Already; in
     find s.init None s.head;
     let l = random_level s.maxl s.prob in
-    let n = { elt = x; next = Array.make (s.maxl (*l?*) + 1) None } in
+    let n = { elt = x; next = Array.make (l + 1) None } in
     s.init <- max s.init l;
     for i = 0 to l do n.next.(i) <- upd.(i).(i); upd.(i).(i) <- Some n done;
     s.size <- s.size + 1
@@ -94,12 +105,13 @@ end = struct
 
   let check s =
     assert (0 <= s.init && s.init <= s.maxl);
+    for i = s.init + 1 to s.maxl do assert (s.head.(i) = None) done;
     let rec check sz prev = function
       | None -> assert (sz = s.size)
       | Some n ->
           (match prev with
            | None -> () | Some x -> assert (X.compare x n.elt < 0));
-          for i = s.init + 1 to s.maxl do assert (n.next.(i) = None) done;
+          assert (Array.length n.next <= s.init + 1);
           check (sz+1) (Some n.elt) n.next.(0)
     in
     check 0 None s.head.(0)
