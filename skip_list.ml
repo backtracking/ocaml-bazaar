@@ -60,9 +60,9 @@ init=4 |o--------------->|.|
     - all `next` arrays have a size <= init + 1
 *)
 
-  type pointer = node option
-  and  node    = {  elt: elt;
-                   next: pointer array; (* len >= 1 *) }
+  type node = {  elt: elt;
+                next: pointer array; (* len >= 1 *) }
+  and pointer = node option
 
   type t = { prob: float;
              maxl: int;
@@ -80,17 +80,17 @@ init=4 |o--------------->|.|
   let size s =
     s.size
 
+  exception Found
+
   let mem s x =
-    let rec find lvl prev a = match a.(lvl) with
-      | Some n when X.compare x n.elt >= 0 ->
-          (* keep moving at the same level *)
-          find lvl (Some n.elt) n.next
-      | _ ->
-          (* decrease level if we can *)
-          if lvl > 0 then find (lvl - 1) prev a else
-          (* otherwise lvl=0 and we stop, with prev <= x < next *)
-          match prev with None -> false | Some y -> X.compare x y = 0 in
-    find s.init None s.head
+    let rec find lvl a = match a.(lvl) with
+      | Some n ->
+          let c = X.compare x n.elt in
+          if c = 0 then raise Found;
+          if c > 0 then find lvl n.next else down lvl a
+      | None -> down lvl a
+    and down lvl a = lvl > 0 && find (lvl - 1) a in
+    try find s.init s.head with Found -> true
 
   (* a newly inserted element is inserted at a random level *)
   let random_level maxl prob =
@@ -98,17 +98,16 @@ init=4 |o--------------->|.|
       if lvl = maxl || Random.float 1.0 < prob then lvl else loop (lvl + 1) in
     loop 0
 
-  exception Already
-
   let add_ s x =
     let upd = Array.make (s.maxl + 1) s.head in (* the arrays to be updated *)
-    let rec find lvl prev a = match a.(lvl) with
-      | Some n when X.compare x n.elt >= 0 -> find lvl (Some n.elt) n.next
-      | _ -> upd.(lvl) <- a;
-             if lvl > 0 then find (lvl - 1) prev a else
-             match prev with None -> ()
-             | Some y -> if X.compare x y = 0 then raise Already; in
-    find s.init None s.head;
+    let rec find lvl a = match a.(lvl) with
+      | Some n ->
+          let c = X.compare x n.elt in
+          if c = 0 then raise Found;
+          if c > 0 then find lvl n.next else down lvl a
+      | None -> down lvl a
+    and down lvl a = upd.(lvl) <- a; if lvl > 0 then find (lvl - 1) a in
+    find s.init s.head;
     let l = random_level s.maxl s.prob in
     let n = { elt = x; next = Array.make (l + 1) None } in
     s.init <- max s.init l;
@@ -116,7 +115,7 @@ init=4 |o--------------->|.|
     s.size <- s.size + 1
 
   let add s x =
-    try add_ s x with Already -> ()
+    try add_ s x with Found -> ()
 
   let check s =
     assert (0 <= s.init && s.init <= s.maxl);
