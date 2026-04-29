@@ -18,9 +18,12 @@ end) : sig
   type t
 
   val create: ?prob:float -> ?max_level:int -> unit -> t
-  val mem: t -> elt -> bool
-  val add: t -> elt -> unit
   val size: t -> int
+  val mem: t -> elt -> bool
+  val min_elt: t -> elt
+  val add: t -> elt -> unit
+  val remove: t -> elt -> unit
+  val iter: (elt -> unit) -> t -> unit
 
   val check: t -> unit
   val print: t -> unit
@@ -92,6 +95,11 @@ init=4 |o--------------->|.|
     and down lvl a = lvl > 0 && find (lvl - 1) a in
     try find s.init s.head with Found -> true
 
+  let min_elt s =
+    match s.head.(0) with
+    | None   -> invalid_arg "min_elt"
+    | Some n -> n.elt
+
   (* a newly inserted element is inserted at a random level *)
   let random_level maxl prob =
     let rec loop lvl =
@@ -117,9 +125,32 @@ init=4 |o--------------->|.|
   let add s x =
     try add_ s x with Found -> ()
 
+  let remove_ s x =
+    let upd = Array.make (s.init + 1) s.head in (* the arrays to be updated *)
+    let rec find lvl a = match a.(lvl) with
+      | Some n when X.compare x n.elt > 0 -> find lvl n.next
+      | Some n -> upd.(lvl) <- a; if lvl = 0 then n else find (lvl - 1) a
+      | None -> if lvl = 0 then raise Not_found; find (lvl - 1) a in
+    let n = find s.init s.head in
+    if X.compare x n.elt <> 0 then raise Not_found;
+    Array.iteri (fun i p -> upd.(i).(i) <- p) n.next; (* jump over n *)
+    s.size <- s.size - 1;
+    while s.init > 0 && s.head.(s.init) = None do s.init <- s.init - 1 done
+
+  let remove s x =
+    try remove_ s x with Not_found -> ()
+
+  let iter f s =
+    let rec loop = function
+      | None -> ()
+      | Some n -> f n.elt; loop n.next.(0) in
+    loop s.head.(0)
+
   let check s =
     assert (0 <= s.init && s.init <= s.maxl);
     for i = s.init + 1 to s.maxl do assert (s.head.(i) = None) done;
+    assert (if s.size = 0 then s.init = 0 && s.head.(0) = None
+            else s.head.(s.init) <> None);
     let rec check sz prev = function
       | None -> assert (sz = s.size)
       | Some n ->
@@ -132,6 +163,10 @@ init=4 |o--------------->|.|
 
   let print s =
     let open Format in
-    printf "prob = %f, maxl = %d, init = %d@." s.prob s.maxl s.init
+    printf "prob = %f, maxl = %d, init = %d@." s.prob s.maxl s.init;
+    let rec loop = function
+      | None -> printf "@."
+      | Some n -> printf " %d" (Array.length n.next); loop n.next.(0) in
+    printf "  levels:"; loop s.head.(0)
 
 end

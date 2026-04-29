@@ -16,11 +16,15 @@ end) : sig
   type t
 
   val create: unit -> t
-  val mem: t -> elt -> bool
-  val add: t -> elt -> unit
   val size: t -> int
+  val mem: t -> elt -> bool
+  val min_elt: t -> elt
+  val add: t -> elt -> unit
+  val remove: t -> elt -> unit
+  val iter: (elt -> unit) -> t -> unit
 
   val check: t -> unit
+  val print: t -> unit
 
 end = struct
 
@@ -28,7 +32,10 @@ end = struct
 
   type node =
     | E
-    | N of { mutable h: int; mutable left: node; elt: elt; mutable right: node }
+    | N of { mutable     h: int  ;
+             mutable  left: node ;
+             mutable   elt: elt  ;
+             mutable right: node }
 
   let rec mem_ x = function
     | E ->
@@ -36,6 +43,11 @@ end = struct
     | N { left; elt; right } ->
         let c = X.compare x elt in
         c = 0 || if c < 0 then mem_ x left else mem_ x right
+
+  let rec min_elt_ = function
+    | E -> invalid_arg "min_elt"
+    | N { left = E; elt } -> elt
+    | N { left } -> min_elt_ left
 
   let height = function
     | E       -> 0
@@ -99,17 +111,43 @@ end = struct
       t
     )
 
-  exception Already
+  exception Found
 
   let rec add_ x = function
     | E ->
         make E x E
     | N ({ left; elt; right } as n) as t ->
         let c = X.compare x elt in
-        if c = 0 then raise Already;
+        if c = 0 then raise Found;
         if c < 0 then n.left  <- add_ x left  else
         if c > 0 then n.right <- add_ x right;
         balance t
+
+  let rec remove_min_ = function
+    | E -> assert false
+    | N { left = E; right } -> right
+    | N ({ left } as n) as t -> n.left <- remove_min_ left; balance t
+
+  let rec remove_ x = function
+    | E ->
+        raise Not_found
+    | N ({ left; elt; right } as n) as t ->
+        let c = X.compare x elt in
+        if c < 0 then (
+          n.left <- remove_ x left; balance t
+        ) else if c > 0 then (
+          n.right <- remove_ x right; balance t
+        ) else
+          if right = E then left else
+          if left = E then right else (
+          n.elt <- min_elt_ right;
+          n.right <- remove_min_ right;
+          balance t
+        )
+
+  let rec iter_ f = function
+    | E -> ()
+    | N { left; elt; right } -> iter_ f left; f elt; iter_ f right
 
   (** capsule *)
 
@@ -127,9 +165,19 @@ end = struct
   let mem s x =
     mem_ x s.root
 
+  let min_elt s =
+    min_elt_ s.root
+
   let add s x =
-    try s.root <- add_ x s.root; s.size <- 1 + s.size
-    with Already -> ()
+    try s.root <- add_ x s.root; s.size <- s.size + 1
+    with Found -> ()
+
+  let remove s x =
+    try s.root <- remove_ x s.root; s.size <- s.size - 1
+    with Not_found -> ()
+
+  let iter f s =
+    iter_ f s.root
 
   (** check *)
 
@@ -155,7 +203,10 @@ end = struct
   let check t =
     assert (t.size = size_ t.root);
     assert (is_bst_ t.root);
-    assert (is_avl_ t.root);
+    assert (is_avl_ t.root)
+
+  let print t =
+    Format.printf "size = %d, height = %d@." t.size (height t.root)
 
 end
 

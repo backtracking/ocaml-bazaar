@@ -20,9 +20,9 @@
  (name avl)
  (modules avl))
 (test
- (name test_avl)
- (modules test_avl)
- (libraries arrays avl))
+ (name test_set)
+ (modules test_set)
+ (libraries arrays avl skip_list))
 
 (library
  (name bintree)
@@ -383,10 +383,7 @@
 (library
  (name skip_list)
  (modules skip_list))
-(test
- (name test_skip_list)
- (modules test_skip_list)
- (libraries arrays skip_list))
+;; tested in test_set
 
 (executable
  (name snake)
