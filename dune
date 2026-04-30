@@ -23,6 +23,11 @@
  (name test_set)
  (modules test_set)
  (libraries arrays avl skip_list))
+(executable
+ (name bench_set)
+ (modules bench_set)
+ (promote (until-clean))
+ (libraries arrays avl skip_list time))
 
 (library
  (name bintree)

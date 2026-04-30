@@ -6,6 +6,7 @@
     Communications of the ACM, Volume 33, Issue 6, 1990
     https://doi.org/10.1145/78973.78977
 
+    A set of size N uses ~10N words (including block headers).
 *)
 
 module Make(X: sig
@@ -74,6 +75,8 @@ init=4 |o--------------->|.|
      mutable size: int; }
 
   let create ?(prob=0.5) ?(max_level=30) () =
+    if prob <= 0. || prob >= 1. then invalid_arg "create";
+    if max_level < 0 || max_level+1 >= Sys.max_array_length then invalid_arg "create";
     { prob;
       maxl = max_level;
       init = 0;

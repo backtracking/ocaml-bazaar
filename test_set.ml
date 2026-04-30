@@ -1,5 +1,11 @@
 
-(** Test mutable sets with ordered elements (AVL, Skip lists, etc.) *)
+(** Test mutable sets with ordered elements (AVL, Skip lists, etc.)
+
+    Space, in words, for a set of size N:
+    - AVL      :   5N
+    - Skip List: ~10N
+
+*)
 
 module type SET = sig
   type elt
@@ -59,10 +65,8 @@ module Test2 = TestString(SLString)
 module TestInt(S: SET with type elt = int) = struct
   open S
 
-  (* open Format *)
-
   let test n =
-    (* printf "n=%d@." n; *)
+    (* Format.printf "n=%d@." n; *)
     let a = Array.init n (fun i -> i) in
     Arrays.shuffle a;
     (* printf "  add "; Array.iter (fun x -> printf "%d," x) a; printf "@."; *)
@@ -72,6 +76,7 @@ module TestInt(S: SET with type elt = int) = struct
       add s a.(i);
     done;
     assert (size s = n);
+    (* Format.printf "  %d words@." (Obj.reachable_words (Obj.repr s)); *)
     check s;
     Array.iter (fun x -> assert (mem s x)) a;
     let next = ref 0 in

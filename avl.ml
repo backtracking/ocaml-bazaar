@@ -4,6 +4,8 @@
     This is a quick and dirty implementation, mostly to compare it
     to skip lists (see skip_list.ml).
 
+    A set of size N uses 5N words (including block headers).
+
 *)
 
 module Make(X: sig
