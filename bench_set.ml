@@ -35,31 +35,31 @@ let () =
   let y = random n (10*m) in
   let z = random n (m/10) in
   (* bench "random x x x" x x x; *)
-  (* bench "random x y y" x y y; *)
-  bench "random x z z" x z z;
+  bench "random x y y" x y y;
+  (* bench "random x z z" x z z; *)
   ()
 
 (*
 random x x x:
-  AVL.add: 1.48
-   SL.add: 3.34
-  AVL.mem: 0.59
-   SL.mem: 3.24
-  AVL.rmv: 1.33
-   SL.rmv: 2.42
+  AVL.add: 1.54
+   SL.add: 2.12
+  AVL.mem: 0.58
+   SL.mem: 1.80
+  AVL.rmv: 1.30
+   SL.rmv: 1.46
 random x y y:
-  AVL.add: 1.44
-   SL.add: 3.36
+  AVL.add: 1.43
+   SL.add: 1.96
   AVL.mem: 0.35
-   SL.mem: 0.59
-  AVL.rmv: 0.47
-   SL.rmv: 0.75
+   SL.mem: 0.50
+  AVL.rmv: 0.46
+   SL.rmv: 0.58
 random x z z:
-  AVL.add: 1.47
-   SL.add: 3.40
-  AVL.mem: 0.49
-   SL.mem: 1.82
-  AVL.rmv: 0.41
-   SL.rmv: 0.79
+  AVL.add: 1.42
+   SL.add: 2.11
+  AVL.mem: 0.42
+   SL.mem: 1.06
+  AVL.rmv: 0.40
+   SL.rmv: 0.74
 *)
 

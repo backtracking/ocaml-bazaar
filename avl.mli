@@ -13,17 +13,12 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** Skip Lists.
-
-    William Pugh
-    Skip lists: a probabilistic alternative to balanced trees
-    Communications of the ACM, Volume 33, Issue 6, 1990
-    https://doi.org/10.1145/78973.78977
+(** Mutable AVL (balanced binary search trees).
 
     This is a mutable data structures for sets of ordered elements.
-    See also avl.ml, test_set.ml, and bench_set.ml.
+    See also skip_list.ml, test_set.ml, and bench_set.ml.
 
-    Space: A set of size N uses ~8N words (including block headers).
+    Space: A set of size N uses ~5N words (including block headers).
 *)
 
 module Make(X: sig
@@ -35,9 +30,7 @@ end) : sig
 
   type t
 
-  val create : ?prob:float -> ?max_level:int -> unit -> t
-  (** note: [max_level = 0] degenerates the data structure into a
-      singly-linked list *)
+  val create : unit -> t
 
   val size : t -> int
 
