@@ -67,6 +67,9 @@ init=4 |o--------------->|.|
                 next: node array; (* len >= 1 *) }
 
   let null = { elt = Obj.magic 42; next = [||] } (* yes, I know... *)
+  (** note: instead of this, we can use `type pointer = node option`
+      but then the space goes from 8N to 10N, and the performance
+      decreases significantly *)
 
   type t = { prob: float;
              maxl: int;
