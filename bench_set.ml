@@ -34,9 +34,9 @@ let () =
   let x = random n m in
   let y = random n (10*m) in
   let z = random n (m/10) in
-  (* bench "random x x x" x x x; *)
+  bench "random x x x" x x x;
   bench "random x y y" x y y;
-  (* bench "random x z z" x z z; *)
+  bench "random x z z" x z z;
   ()
 
 (*
