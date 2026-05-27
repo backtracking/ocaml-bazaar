@@ -287,6 +287,12 @@
  (promote (until-clean))
  (modules parse_arith_cont))
 
+(executable
+ (name pascal_overflow)
+ (promote (until-clean))
+ (modules pascal_overflow)
+ (libraries graphics zarith))
+
 (library
  (name permutation)
  (modules permutation)
