@@ -119,6 +119,11 @@
  (libraries dyadic))
 
 (library
+ (name euler)
+ (modules euler)
+ (libraries bitv))
+
+(library
  (name fenwick)
  (modules fenwick))
 (test
