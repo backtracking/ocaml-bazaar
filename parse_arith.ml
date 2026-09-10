@@ -1,6 +1,6 @@
-(* parse arithmetic expressions from the standard input, according
-   to the grammar e ::= n | e+e | e*e | (e), and prints the value
-   on the standard output *)
+(* parse an arithmetic expression from the standard input,
+   according to the grammar e ::= n | e+e | e-e | e*e | e/e | (e),
+   and print the value on the standard output *)
 
 let eof = '\000'
 let t = ref eof
@@ -17,8 +17,10 @@ let rec a () = match !t with
   | '0'..'9' -> i 0
   | '(' -> next (); let v = ae () in if !t <> ')' then error (); next (); v
   | _ -> error ()
-and met v = if !t = '*' then (next (); met (v * a())) else v
+and met v = if !t = '*' then (next (); met (v * a())) else
+            if !t = '/' then (next (); met (v / a())) else v
 and me () = met (a ())
-and aet v = if !t = '+' then (next (); aet (v + me())) else v
+and aet v = if !t = '+' then (next (); aet (v + me())) else
+            if !t = '-' then (next (); aet (v - me())) else v
 and ae () = aet (me ())
 let () = Format.printf "%d@." (ae ()); if !t <> eof then error ()
