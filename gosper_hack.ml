@@ -32,6 +32,8 @@
              00000000000000000000111111
                                  < m-1>
 
+     CAVEAT: do first a *logical shift right* of 2, then divide by c
+
    Finally, OR this with r to get the expected word:
 
              ?????????00000100000111111
