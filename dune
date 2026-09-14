@@ -472,6 +472,21 @@
  (name trie)
  (modules trie))
 
+(library
+ (name vga)
+ (modules vga)
+ (libraries graphics))
+(test
+ (name test_vga)
+ (modules test_vga)
+ (libraries vga))
+(executable
+ (name vga_chaos)
+ (flags ())
+ (promote (until-clean))
+ (modules vga_chaos)
+ (libraries vga))
+
 (executable
  (name word5)
  (flags ())
