@@ -14,7 +14,7 @@ let identity n =
   { size = n; pi = a; ip = a } (* sharing is fine *)
 
 let inverse p =
-  { size = p.size; pi = p.ip; ip = p.pi }
+  { size = p.size; pi = p.ip; ip = p.pi } (* sharing is fine *)
 
 let compose p q =
   if p.size <> q.size then invalid_arg "compose";
@@ -147,9 +147,17 @@ let count_inversions p =
   done;
   !inv
 
+(* O(n) by following the cycles, marking visited values with -1 *)
 let sign p =
-  let c = count_inversions p in
-  if c mod 2 = 0 then 1 else -1
+  let a = Array.copy p.pi in
+  let rec loop s i =
+    if i = p.size then s else
+    if a.(i) = -1 then loop s (i + 1) else
+    let rec orbit len j =
+      if a.(j) = - 1 then loop (if len mod 2 = 0 then -s else s) (i + 1) else
+      (let j' = a.(j) in a.(j) <- -1; orbit (len + 1) j') in
+    orbit 0 i in
+  loop 1 0
 
 let rec gcd a b = let m = a mod b in if m = 0 then b else gcd b m
 let lcm a b = if a = 0 then b else if b = 0 then a else (a / gcd a b) * b
@@ -188,6 +196,7 @@ let permute_array_in_place p a =
   Array.blit a' 0 a 0 p.size
 
 let permute_list p l =
+  if p.size <> List.length l then invalid_arg "permute_list";
   let a = permute_array p (Array.of_list l) in
   Array.to_list a
 
