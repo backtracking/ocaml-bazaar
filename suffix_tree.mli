@@ -37,7 +37,7 @@ module type Alphabet = sig
 
   (* characters *)
 
-  type t 
+  type t
 
   (* [dummy] is a character that is assumed not to appear in any string *)
   val dummy : t
@@ -62,7 +62,7 @@ end
 module type Branching = sig
 
   type key
-  type 'a t 
+  type 'a t
 
   val create : unit -> 'a t
   val add : 'a t -> key -> 'a -> unit
@@ -96,7 +96,7 @@ module Make(A : Alphabet)(B : Branching with type key = A.t) : sig
       otherwise *)
   val find : t -> A.s -> position
 
-  (** [leaves f p] iterates function [f] overs all suffixes below 
+  (** [leaves f p] iterates function [f] overs all suffixes below
       position [p]; a suffix is passed as the index of its first character *)
   val leaves : (int -> unit) -> position -> unit
 
@@ -105,24 +105,23 @@ end
 (*s Some usual branching implementations *)
 
 (* Maps from Ocaml's standard library *)
-module Bmap(X : Map.OrderedType) 
+module Bmap(X : Map.OrderedType)
   : Branching with type key = X.t
 
-(* Arrays. To be used only when characters are integers. 
+(* Arrays. To be used only when characters are integers.
    The alphabet size must be provided *)
-module Barray(A : sig val size : int end) 
+module Barray(A : sig val size : int end)
   : Branching with type key = int
 
 (* Association lists *)
-module Blist(X : sig type t val equal : t -> t -> bool end) 
+module Blist(X : sig type t val equal : t -> t -> bool end)
   : Branching with type key = X.t
 
-(* Hash tables. 
+(* Hash tables.
    The provided value [A.size] is a hint to initialize hash tables length.*)
-module Bhash(A : sig val size : int end)(X : Hashtbl.HashedType) 
+module Bhash(A : sig val size : int end)(X : Hashtbl.HashedType)
   : Branching with type key = X.t
 
 (*s The usual alphabet for types [char] and [string] *)
 
 module CharString : Alphabet with type t = char and type s = string
-
