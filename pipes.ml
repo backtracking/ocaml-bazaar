@@ -126,7 +126,7 @@ let shuffle () =
   state.game <- true;
   draw ()
 
-let restart () =
+let restart ?(show=false) () =
   dprintf "restart@.";
   dprintf "  size = %d@." state.size;
   let start = Random.int state.size, Random.int state.size in
@@ -151,6 +151,7 @@ let restart () =
     shuffle_list s |> Array.iter @@ fun q -> dfs ~from:p q
     ) in
   dfs start;
+  if not show then shuffle ();
   draw ()
 
 let set_size size =
@@ -164,7 +165,8 @@ let set_size size =
 let () =
   printf "Keys:
   q: exit
-  r: restart
+  n: new game (generate and shuffle)
+  g: generate
   s: shuffle
   +: increase size
   -: decrease size
@@ -176,7 +178,8 @@ let () =
     if st.keypressed then
       match st.key with
       | 'q' -> raise Exit
-      | 'r' -> restart ()
+      | 'n' -> restart ()
+      | 'g' -> restart ~show:true ()
       | 's' -> shuffle ()
       | '+' -> set_size (state.size + 1); restart ()
       | '-' -> if state.size > 3 then (set_size (state.size - 1); restart ())
