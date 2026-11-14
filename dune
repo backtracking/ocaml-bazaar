@@ -307,6 +307,12 @@
  (modules test_permutation)
  (libraries permutation))
 
+(executable
+ (name pipes)
+ (promote (until-clean))
+ (modules pipes)
+ (libraries graphics grid))
+
 (library
  (name pmpq)
  (modules pmpq))
@@ -425,6 +431,14 @@
  (promote (until-clean))
  (modules sudoku)
  (libraries sparse))
+
+(library
+ (name suffix_array)
+ (modules suffix_array))
+(test
+ (name test_suffix_array)
+ (modules test_suffix_array)
+ (libraries suffix_array))
 
 (library
  (name suffix_tree)

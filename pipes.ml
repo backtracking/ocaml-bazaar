@@ -1,0 +1,156 @@
+
+open Graphics
+
+let _DEBUG = false
+
+let wsize = 800
+let () = open_graph (Printf.sprintf " %dx%d" wsize wsize)
+
+type tile = { n: bool; w: bool; s: bool; e: bool }
+
+let rotr t = { e = t.n; s = t.e; w = t.s; n = t.w }
+let rotl t = { n = t.e; e = t.s; s = t.w; w = t.n }
+let count t = let i b = if b then 1 else 0 in i t.n + i t.w + i t.s + i t.e
+let shuffle_tile t = match Random.int 4 with
+  | 0 -> t | 1 -> rotr t | 2 -> rotr (rotr t) | 3 -> rotl t | _ -> assert false
+
+let empty = { n = false; w = false; s = false; e = false }
+
+type state = {
+  mutable size: int;
+  mutable step: int;
+  mutable grid: tile Grid.t;
+}
+
+let state = {
+  size = 1;
+  step = wsize;
+  grid = Grid.make 1 1 empty;
+}
+
+let draw_tile (i, j) t =
+  let step = state.step in
+  let pen = step / 10 in
+  set_line_width pen;
+  let u = step/2 in
+  let x, y = step * j + u, wsize - step * i - u in
+  set_color white; fill_rect (x-u) (y-u) step step;
+if _DEBUG then (
+  set_color red; let r = step/20 in
+  if t.n then fill_circle x (y + step/3) r;
+  if t.s then fill_circle x (y - step/3) r;
+  if t.w then fill_circle (x - step/3) y r;
+  if t.e then fill_circle (x + step/3) y r;
+  moveto x y;
+  draw_string (Printf.sprintf "%d,%d/%d" i j (count t));
+);
+  set_color black;
+  match count t with
+  | 0 ->
+      assert false
+  | 1 ->
+      fill_circle x y (pen + 4);
+      moveto x y;
+      if t.n then lineto x (y + u) else
+      if t.s then lineto x (y - u) else
+      if t.w then lineto (x - u) y else
+                  lineto (x + u) y
+  | 2 ->
+      if t.n && t.s then (moveto x (y - u); lineto x (y + u)) else
+      if t.w && t.e then (moveto (x - u) y; lineto (x + u) y) else
+      let x, y, a1, a2 =
+        if t.n && t.w then x-u, y+u, 270, 360 else
+        if t.w && t.s then x-u, y-u, 0  ,  90 else
+        if t.s && t.e then x+u, y-u,  90, 180 else
+        if t.e && t.n then x+u, y+u, 180, 270 else assert false in
+      draw_arc x y u u a1 a2
+  | 3 ->
+      if not t.n then
+        (moveto x y; lineto x (y-u); moveto (x-u) y; lineto (x+u) y) else
+      if not t.s then
+        (moveto x y; lineto x (y+u); moveto (x-u) y; lineto (x+u) y) else
+      if not t.w then
+        (moveto x y; lineto (x+u) y; moveto x (y-u); lineto x (y+u)) else
+      if not t.e then
+        (moveto x y; lineto (x-u) y; moveto x (y-u); lineto x (y+u)) else
+      assert false
+  | 4 ->
+      moveto x (y-u); lineto x (y+u);
+      moveto (x-u) y; lineto (x+u) y
+  | _ ->
+      assert false
+
+let draw () =
+  clear_graph ();
+  set_line_width 1; set_color black;
+  for i = 0 to state.size do
+    let x = i * state.step in
+    moveto x 0; lineto x wsize;
+    moveto 0 x; lineto wsize x;
+  done;
+  Grid.iter draw_tile state.grid
+
+let random_list l =
+  List.nth l (Random.int (List.length l))
+let shuffle_list l =
+  let a = Array.of_list l in Array.shuffle ~rand:Random.int a; a
+
+let shuffle () =
+  let open Grid in
+  iter (fun p t -> set state.grid p (shuffle_tile t)) state.grid;
+  draw ()
+
+let restart () =
+  Format.eprintf "restart@.";
+  Format.eprintf "  size = %d@." state.size;
+  let start = Random.int state.size, Random.int state.size in
+  Format.eprintf "  start = %d,%d@." (fst start) (snd start);
+  let g = state.grid in
+  let open Grid in
+  iter (fun p _ -> set g p empty) g;
+  let set_north p = set g p { (get g p) with n = true } in
+  let set_south p = set g p { (get g p) with s = true } in
+  let set_west  p = set g p { (get g p) with w = true } in
+  let set_east  p = set g p { (get g p) with e = true } in
+  let rec dfs ?from p = if get g p == empty then (
+    Format.eprintf "  p = %d,%d@." (fst p) (snd p);
+    (match from with None -> () | Some f ->
+       Format.eprintf "    from %d,%d@." (fst f) (snd f);
+       if north f = p then (set_north f; set_south p) else
+       if south f = p then (set_south f; set_north p) else
+       if west  f = p then (set_west  f; set_east  p) else
+       if east  f = p then (set_east  f; set_west  p) else assert false);
+    let s = fold4 (fun q t s -> if t == empty then q::s else s) g p [] in
+    shuffle_list s |> Array.iter @@ fun q -> dfs ~from:p q
+    ) in
+  dfs start;
+  (* TODO shuffle *)
+  draw ()
+
+let set_size size =
+  state.size <- size;
+  state.step <- wsize / size;
+  state.grid <- Grid.make size size empty;
+  restart ()
+
+let () =
+  (* Random.init 42; *)
+  set_size 5;
+  try while true do
+    let st = wait_next_event [Button_down; Key_pressed] in
+    if st.keypressed then
+      match st.key with
+      | 'q' -> raise Exit
+      | 'r' -> restart ()
+      | 's' -> shuffle ()
+      | '+' -> set_size (state.size + 1); restart ()
+      | '-' -> if state.size > 3 then (set_size (state.size - 1); restart ())
+      | _ -> ()
+    else if st.button then (
+      let x, y = st.mouse_x, st.mouse_y in
+      let i, j as p = (wsize - y) / state.step, x / state.step in
+      let t = Grid.get state.grid p |> rotr in
+      Grid.set state.grid p t;
+      draw_tile p t
+    )
+  done with Exit -> close_graph ()
