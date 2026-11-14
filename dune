@@ -311,7 +311,7 @@
  (name pipes)
  (promote (until-clean))
  (modules pipes)
- (libraries graphics grid))
+ (libraries graphics grid uf))
 
 (library
  (name pmpq)
@@ -485,6 +485,10 @@
 (library
  (name trie)
  (modules trie))
+
+(library
+ (name uf)
+ (modules uf))
 
 (library
  (name vga)

@@ -1,10 +1,15 @@
 
+open Format
 open Graphics
+module UF = Uf.Int
 
 let _DEBUG = false
+let dprintf fmt = (if _DEBUG then eprintf else ifprintf err_formatter) fmt
 
 let wsize = 800
-let () = open_graph (Printf.sprintf " %dx%d" wsize wsize)
+let () =
+  open_graph (Printf.sprintf " %dx%d" wsize wsize);
+  auto_synchronize false
 
 type tile = { n: bool; w: bool; s: bool; e: bool }
 
@@ -20,21 +25,25 @@ type state = {
   mutable size: int;
   mutable step: int;
   mutable grid: tile Grid.t;
+  mutable start: Grid.position;
+  mutable game: bool;
 }
 
 let state = {
   size = 1;
   step = wsize;
   grid = Grid.make 1 1 empty;
+  start = 0,0;
+  game = false;
 }
 
-let draw_tile (i, j) t =
+let draw_tile ?(color=black) (i, j) t =
   let step = state.step in
   let pen = step / 10 in
   set_line_width pen;
   let u = step/2 in
   let x, y = step * j + u, wsize - step * i - u in
-  set_color white; fill_rect (x-u) (y-u) step step;
+  (* set_color white; fill_rect (x-u) (y-u) step step; *)
 if _DEBUG then (
   set_color red; let r = step/20 in
   if t.n then fill_circle x (y + step/3) r;
@@ -44,7 +53,7 @@ if _DEBUG then (
   moveto x y;
   draw_string (Printf.sprintf "%d,%d/%d" i j (count t));
 );
-  set_color black;
+  set_color color;
   match count t with
   | 0 ->
       assert false
@@ -88,7 +97,23 @@ let draw () =
     moveto x 0; lineto x wsize;
     moveto 0 x; lineto wsize x;
   done;
-  Grid.iter draw_tile state.grid
+  let n = state.size * state.size in
+  let uf = UF.create n in
+  let cell (i, j) = i * state.size + j in
+  let connect p q = UF.union uf (cell p) (cell q) in
+  let connect p t = let open Grid in
+    let q = east p in
+    if t.e && inside state.grid q && (get state.grid q).w then connect p q;
+    let q = south p in
+    if t.s && inside state.grid q && (get state.grid q).n then connect p q in
+  Grid.iter connect state.grid;
+  let c0 = cell state.start in
+  let draw_tile p t =
+    let color = if UF.same_class uf (cell p) c0 then blue else black in
+    draw_tile ~color p t in
+  Grid.iter draw_tile state.grid;
+  if state.game && UF.num_classes uf = 1 then printf "Well done!@.";
+  synchronize ()
 
 let random_list l =
   List.nth l (Random.int (List.length l))
@@ -98,13 +123,15 @@ let shuffle_list l =
 let shuffle () =
   let open Grid in
   iter (fun p t -> set state.grid p (shuffle_tile t)) state.grid;
+  state.game <- true;
   draw ()
 
 let restart () =
-  Format.eprintf "restart@.";
-  Format.eprintf "  size = %d@." state.size;
+  dprintf "restart@.";
+  dprintf "  size = %d@." state.size;
   let start = Random.int state.size, Random.int state.size in
-  Format.eprintf "  start = %d,%d@." (fst start) (snd start);
+  state.start <- start;
+  dprintf "  start = %d,%d@." (fst start) (snd start);
   let g = state.grid in
   let open Grid in
   iter (fun p _ -> set g p empty) g;
@@ -113,9 +140,9 @@ let restart () =
   let set_west  p = set g p { (get g p) with w = true } in
   let set_east  p = set g p { (get g p) with e = true } in
   let rec dfs ?from p = if get g p == empty then (
-    Format.eprintf "  p = %d,%d@." (fst p) (snd p);
+    dprintf "  p = %d,%d@." (fst p) (snd p);
     (match from with None -> () | Some f ->
-       Format.eprintf "    from %d,%d@." (fst f) (snd f);
+       dprintf "    from %d,%d@." (fst f) (snd f);
        if north f = p then (set_north f; set_south p) else
        if south f = p then (set_south f; set_north p) else
        if west  f = p then (set_west  f; set_east  p) else
@@ -124,17 +151,25 @@ let restart () =
     shuffle_list s |> Array.iter @@ fun q -> dfs ~from:p q
     ) in
   dfs start;
-  (* TODO shuffle *)
   draw ()
 
 let set_size size =
+  printf "size %dx%d@." size size;
   state.size <- size;
   state.step <- wsize / size;
   state.grid <- Grid.make size size empty;
+  state.game <- false;
   restart ()
 
 let () =
-  (* Random.init 42; *)
+  printf "Keys:
+  q: exit
+  r: restart
+  s: shuffle
+  +: increase size
+  -: decrease size
+  @.";
+  if _DEBUG then Random.init 42;
   set_size 5;
   try while true do
     let st = wait_next_event [Button_down; Key_pressed] in
@@ -151,6 +186,6 @@ let () =
       let i, j as p = (wsize - y) / state.step, x / state.step in
       let t = Grid.get state.grid p |> rotr in
       Grid.set state.grid p t;
-      draw_tile p t
+      draw ()
     )
   done with Exit -> close_graph ()
