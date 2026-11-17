@@ -39,8 +39,7 @@ let state = {
 
 let draw_tile ?(color=black) (i, j) t =
   let step = state.step in
-  let pen = step / 10 in
-  set_line_width pen;
+  let pen = step / 6 in
   let u = step/2 in
   let x, y = step * j + u, wsize - step * i - u in
   (* set_color white; fill_rect (x-u) (y-u) step step; *)
@@ -54,6 +53,7 @@ if _DEBUG then (
   draw_string (Printf.sprintf "%d,%d/%d" i j (count t));
 );
   set_color color;
+  set_line_width pen;
   match count t with
   | 0 ->
       assert false
@@ -126,7 +126,57 @@ let shuffle () =
   state.game <- true;
   draw ()
 
+type algo = Adfs | Auf
+let algo = ref Adfs
+
+(* perfect maze using a random DFS from `start` *)
+let gen_dfs start connect =
+  let g = state.grid in
+  let open Grid in
+  let rec dfs ?from p = if get g p == empty then (
+    dprintf "  p = %d,%d@." (fst p) (snd p);
+    (match from with None -> () | Some f ->
+       dprintf "    from %d,%d@." (fst f) (snd f);
+       connect f p);
+    let s = fold4 (fun q t s -> if t == empty then q::s else s)
+              g p [] in
+    shuffle_list s |> Array.iter @@ fun q -> dfs ~from:p q
+    ) in
+  dfs start
+
+(* perfect maze using Union-Find
+   ensures that `start` has a single neighbor *)
+let gen_uf start connect =
+  let open Grid in
+  (* 1. build all possible connections *)
+  let walls = ref [] in
+  let walls_start = ref [] in
+  let add p q =
+    if p = start || q = start then
+      walls_start := (p, q) :: !walls_start
+    else
+      walls := (p, q) :: !walls in
+  for i = 0 to state.size - 1 do
+    for j = 0 to state.size - 1 do
+      let p = i, j in
+      if j < state.size - 1 then add p (east p);
+      if i < state.size - 1 then add p (south p)
+    done
+  done;
+  walls := random_list !walls_start :: !walls;
+  (* 2. consider them in a random order, and connect if not yet *)
+  let n = state.size * state.size in
+  let uf = UF.create n in
+  let cell (i, j) = i * state.size + j in
+  let connect (p, q) =
+    let cp = cell p and cq = cell q in
+    if not (UF.same_class uf cp cq) then (
+      connect p q; UF.union uf cp cq
+    ) in
+  shuffle_list !walls |> Array.iter connect
+
 let restart ?(show=false) () =
+  state.game <- false;
   dprintf "restart@.";
   dprintf "  size = %d@." state.size;
   let start = Random.int state.size, Random.int state.size in
@@ -139,18 +189,12 @@ let restart ?(show=false) () =
   let set_south p = set g p { (get g p) with s = true } in
   let set_west  p = set g p { (get g p) with w = true } in
   let set_east  p = set g p { (get g p) with e = true } in
-  let rec dfs ?from p = if get g p == empty then (
-    dprintf "  p = %d,%d@." (fst p) (snd p);
-    (match from with None -> () | Some f ->
-       dprintf "    from %d,%d@." (fst f) (snd f);
-       if north f = p then (set_north f; set_south p) else
-       if south f = p then (set_south f; set_north p) else
-       if west  f = p then (set_west  f; set_east  p) else
-       if east  f = p then (set_east  f; set_west  p) else assert false);
-    let s = fold4 (fun q t s -> if t == empty then q::s else s) g p [] in
-    shuffle_list s |> Array.iter @@ fun q -> dfs ~from:p q
-    ) in
-  dfs start;
+  let connect f p =
+    if north f = p then (set_north f; set_south p) else
+    if south f = p then (set_south f; set_north p) else
+    if west  f = p then (set_west  f; set_east  p) else
+    if east  f = p then (set_east  f; set_west  p) else assert false in
+  (match !algo with Adfs -> gen_dfs | Auf -> gen_uf) start connect;
   if not show then shuffle ();
   draw ()
 
@@ -178,9 +222,11 @@ let () =
     if st.keypressed then
       match st.key with
       | 'q' -> raise Exit
-      | 'n' -> restart ()
+      | 'n' -> printf "New game@."; restart ()
       | 'g' -> restart ~show:true ()
       | 's' -> shuffle ()
+      | 'd' -> printf "Algo is DFS@."; algo := Adfs
+      | 'u' -> printf "Algo is Union-Find@."; algo := Auf
       | '+' -> set_size (state.size + 1); restart ()
       | '-' -> if state.size > 3 then (set_size (state.size - 1); restart ())
       | _ -> ()
