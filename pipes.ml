@@ -215,7 +215,7 @@ let () =
   +: increase size
   -: decrease size
   @.";
-  if _DEBUG then Random.init 42;
+  if _DEBUG then Random.init 42 else Random.self_init ();
   set_size 5;
   try while true do
     let st = wait_next_event [Button_down; Key_pressed] in
